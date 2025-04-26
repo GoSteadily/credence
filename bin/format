@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+#
+# Usage: format [args-for-ruff-format]
+#
+
+set -euo pipefail
+
+project="${PROJECT:?}"
+
+ruff format "$@" \
+  "$project/src" \
+  "$project/tests"
+
+  # "$project/migrations" \
+  # "$project/scripts" \

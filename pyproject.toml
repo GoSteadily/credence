@@ -1,0 +1,40 @@
+[project]
+name = "credence"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "instructor>=1.7.9",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "mypy>=1.15.0",
+    "pytest>=8.3.5",
+    "ruff>=0.11.7",
+]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+testpaths = [ "tests" ]
+
+[tool.ruff]
+line-length = 160
+
+[tool.ruff.lint]
+# See https://docs.astral.sh/ruff/rules/
+select = [
+    "F",      # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "E", "W", # https://docs.astral.sh/ruff/rules/#pycodestyle-e-w
+    "B",      # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
+    "I",      # https://docs.astral.sh/ruff/rules/#isort-i
+    "PT",     # https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
+]
+ignore = [ "E501", "B006", "B019" ]

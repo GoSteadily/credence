@@ -1,0 +1,13 @@
+.devbox/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+__pycache__/
+tmp/
+
+.bashrc
+.env
+
+*.pyc
+.vscode/settings.json

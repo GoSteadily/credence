@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+#
+# Usage: lint [args-for-ruff-check]
+#
+
+set -euo pipefail
+
+project="${PROJECT:?}"
+
+ruff check "$@" \
+  "$project/src" \
+  "$project/tests"
+
+  # "$project/migrations" \
+  # "$project/scripts" \

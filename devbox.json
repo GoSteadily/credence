@@ -1,0 +1,27 @@
+{
+  "packages": {
+    "python": {
+      "version": "3.12.6",
+      "patch": "never"
+    },
+    "shellcheck": "latest",
+    "uv": "latest"
+  },
+  "//env_from": ".env",
+  "env": {
+    "PATH": "$PWD/bin:$PATH",
+    "PROJECT": "$PWD"
+  },
+  "shell": {
+    "init_hook": [
+      "alias c='check'",
+      "alias f='format'",
+      "alias l='lint'",
+      "alias lf='lint --fix'",
+      "alias t='pytest'",
+      ". $VENV_DIR/bin/activate",
+      "uv sync",
+      "if [ -z $CI ] && [ -f $PROJECT/.bashrc ]; then . $PROJECT/.bashrc; fi"
+    ]
+  }
+}

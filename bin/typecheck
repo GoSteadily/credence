@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+#
+# Usage: typecheck [args-for-mypy-check]
+#
+
+set -euo pipefail
+
+project="${PROJECT:?}"
+
+mypy "$@" "$project/src" \
+  "$project/tests" 
+  # "$project/migrations"
+  # "$project/scripts" \
