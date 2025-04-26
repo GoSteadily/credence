@@ -10,7 +10,9 @@ from credence.step.execute import Execute
 from credence.step.user import User
 
 
-class MyChatbotAdapter(Adapter):
+class TestChatbotAdapter(Adapter):
+    __test__ = False
+    
     def handle_message(self, message: str):
         if "Hi" in message or "Hello" in message:
             greeting = "Hello there."
@@ -46,7 +48,7 @@ class MyChatbotAdapter(Adapter):
 def test_maa():
     for conversation in conversations():
         (
-            MyChatbotAdapter()
+            TestChatbotAdapter()
             #
             .set_context()
             .test(conversation)
