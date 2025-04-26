@@ -64,8 +64,7 @@ def conversations():
                 User.generated("Say hello and introduce yourself as John"),
                 Chatbot.expect(
                     [
-                        Chatbot.ai_check(
-                            should="respond with user's name John and introduce itself as credence"),
+                        Chatbot.ai_check(should="respond with user's name John and introduce itself as credence"),
                         Chatbot.contains(string="John"),
                         Chatbot.re_match(regexp="Hi|Hello"),
                     ]
@@ -82,7 +81,6 @@ def conversations():
                         Chatbot.re_match(regexp="Hi|Hello"),
                     ]
                 ),
-
             ],
         ),
     ]

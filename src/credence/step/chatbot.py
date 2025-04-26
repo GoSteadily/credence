@@ -20,6 +20,11 @@ class ChatbotResponseContains(ChatbotCheck):
 
 
 @dataclass
+class ChatbotResponseEquals(ChatbotCheck):
+    string: str
+
+
+@dataclass
 class ChatbotResponseRegexMatch(ChatbotCheck):
     pattern: re.Pattern
 
@@ -41,6 +46,10 @@ class Chatbot(Step):
     @staticmethod
     def contains(string: str):
         return ChatbotResponseContains(string=string)
+
+    @staticmethod
+    def equals(string: str):
+        return ChatbotResponseEquals(string=string)
 
     @staticmethod
     def re_match(regexp: str):

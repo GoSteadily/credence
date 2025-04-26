@@ -5,6 +5,6 @@ from credence.step import Step
 
 
 @dataclass
-class Conversation:
+class Conversation(Step):
     title: str
     steps: List[Step]
