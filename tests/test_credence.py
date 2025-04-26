@@ -2,6 +2,7 @@ import os
 
 import instructor
 import openai
+import pytest
 
 from credence.adapter import Adapter
 from credence.conversation import Conversation
@@ -20,7 +21,7 @@ class TestChatbotAdapter(Adapter):
             if self.context.get("name"):
                 greeting = f"Hi {self.context['name']}."
 
-            return f"{greeting} I am credence"
+            return f"{greeting} My name is credence"
         else:
             return None
 
@@ -45,17 +46,6 @@ class TestChatbotAdapter(Adapter):
         self.add_to_context("name", name)
 
 
-def test_maa():
-    for conversation in conversations():
-        (
-            TestChatbotAdapter()
-            #
-            .set_context()
-            .test(conversation)
-            .print()
-        )
-
-
 def conversations():
     return [
         Conversation(
@@ -66,7 +56,7 @@ def conversations():
                 User.generated("Say hello and introduce yourself as John"),
                 Chatbot.expect(
                     [
-                        Response.ai_check(should="respond with user's name John and introduce itself as credence"),
+                        Response.ai_check(should="respond with user's name John and introduce itself as 'credence'"),
                         Response.contains(string="John"),
                         Response.re_match(regexp="Hi|Hello"),
                     ]
@@ -86,3 +76,11 @@ def conversations():
             ],
         ),
     ]
+
+
+@pytest.mark.parametrize("conversation", conversations())
+def test_maa(conversation):
+    result = TestChatbotAdapter().set_context().test(conversation)
+
+    result.print()
+    assert result.errors == []
