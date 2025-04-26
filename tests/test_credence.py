@@ -52,7 +52,6 @@ def conversations():
             title="registered user sends messages",
             steps=[
                 Execute("enrol_user", {"name": "John"}),
-                # User.message("Hello"),
                 User.generated("Say hello and introduce yourself as John"),
                 Chatbot.expect(
                     [
@@ -66,7 +65,7 @@ def conversations():
         Conversation(
             title="unknown user sends messages",
             steps=[
-                User.message("Hello, I'm Nduati"),
+                User.message("Hello, I'm John"),
                 Chatbot.expect(
                     [
                         Response.contains(string="there"),
