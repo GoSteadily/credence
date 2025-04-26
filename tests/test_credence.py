@@ -11,7 +11,6 @@ from credence.step.user import User
 
 
 class MyChatbotAdapter(Adapter):
-    #   must provide a handle-message function
     def handle_message(self, message: str):
         if "Hi" in message or "Hello" in message:
             greeting = "Hello there."
