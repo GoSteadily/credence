@@ -5,7 +5,7 @@ import openai
 
 from credence.adapter import Adapter
 from credence.conversation import Conversation
-from credence.step.chatbot import Chatbot
+from credence.step.chatbot import Chatbot, Response
 from credence.step.execute import Execute
 from credence.step.user import User
 
@@ -66,9 +66,9 @@ def conversations():
                 User.generated("Say hello and introduce yourself as John"),
                 Chatbot.expect(
                     [
-                        Chatbot.ai_check(should="respond with user's name John and introduce itself as credence"),
-                        Chatbot.contains(string="John"),
-                        Chatbot.re_match(regexp="Hi|Hello"),
+                        Response.ai_check(should="respond with user's name John and introduce itself as credence"),
+                        Response.contains(string="John"),
+                        Response.re_match(regexp="Hi|Hello"),
                     ]
                 ),
             ],
@@ -79,8 +79,8 @@ def conversations():
                 User.message("Hello, I'm Nduati"),
                 Chatbot.expect(
                     [
-                        Chatbot.contains(string="there"),
-                        Chatbot.re_match(regexp="Hi|Hello"),
+                        Response.contains(string="there"),
+                        Response.re_match(regexp="Hi|Hello"),
                     ]
                 ),
             ],

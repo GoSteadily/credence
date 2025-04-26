@@ -39,6 +39,8 @@ class Chatbot(Step):
     def expect(expectations: List[ChatbotCheck]):
         return ChatbotExpectations(expectations=expectations)
 
+
+class Response(Step):
     @staticmethod
     def ai_check(should: str):
         return ChatbotResponseAICheck(prompt=should)
