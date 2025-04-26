@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Tuple
 
 from instructor import Instructor
 from openai.types.chat import ChatCompletionAssistantMessageParam, ChatCompletionMessageParam, ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam
-from termcolor import cprint
+from termcolor import colored, cprint
 
 from credence.conversation import Conversation
 from credence.step.chatbot import ChatbotExpectations, ChatbotResponseAICheck, ChatbotResponseContains, ChatbotResponseEquals, ChatbotResponseRegexMatch
@@ -249,12 +249,20 @@ Pretend you are a user and complete this conversation.
         for expectation in step.expectations:
             if isinstance(expectation, ChatbotResponseAICheck):
                 client = self._client()
-                ContentTestResult.check_requirement(
+                result = ContentTestResult.check_requirement(
                     client=client,
                     model_name=self.model_name(),
                     messages=messages,
                     requirement=expectation.prompt,
                 )
+                if not result.was_met:
+                    raise Exception(
+                        f"""
+chatbot response did not pass AI check:
+{colored("requirement", attrs=["bold"])}: {expectation.prompt}
+{colored("     reason", attrs=["bold"])}: {result.reason}
+{colored("   response", attrs=["bold"])}: {chatbot_response}"""
+                    )
 
             elif isinstance(expectation, ChatbotResponseEquals):
                 if expectation.string != chatbot_response:

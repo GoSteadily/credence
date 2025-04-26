@@ -12,7 +12,7 @@ from credence.step.user import User
 
 class TestChatbotAdapter(Adapter):
     __test__ = False
-    
+
     def handle_message(self, message: str):
         if "Hi" in message or "Hello" in message:
             greeting = "Hello there."

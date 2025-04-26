@@ -19,6 +19,7 @@
       "alias l='lint'",
       "alias lf='lint --fix'",
       "alias t='pytest'",
+      "alias tc='typecheck'",
       ". $VENV_DIR/bin/activate",
       "uv sync",
       "if [ -z $CI ] && [ -f $PROJECT/.bashrc ]; then . $PROJECT/.bashrc; fi"
