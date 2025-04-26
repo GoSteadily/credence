@@ -15,27 +15,23 @@ class TestChatbotAdapter(Adapter):
     __test__ = False
 
     def handle_message(self, message: str):
-        if "Hi" in message or "Hello" in message:
-            greeting = "Hello there."
+        if self.is_greeting(message):
+            response = "Hello there."
 
             if self.context.get("name"):
-                greeting = f"Hi {self.context['name']}."
+                response = f"Hi {self.context['name']}."
 
-            return f"{greeting} My name is credence"
+            return f"{response} My name is credence"
         else:
             return None
+    
+    def is_greeting(self, message):
+        return "Hi" in message or "Hello" in message
 
     def create_client(self):
-        if os.environ.get("TOGETHER_API_KEY"):
-            client = openai.OpenAI(
-                base_url="https://api.together.xyz/v1",
-                api_key=os.environ["TOGETHER_API_KEY"],
-            )
-        else:
-            client = openai.OpenAI(
-                # base_url="https://api.together.xyz/v1",
-                api_key=os.environ["OPENAI_API_KEY"],
-            )
+        client = openai.OpenAI(
+            api_key=os.environ["OPENAI_API_KEY"],
+        )
 
         return instructor.from_openai(client, mode=instructor.Mode.TOOLS)
 
