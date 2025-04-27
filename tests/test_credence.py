@@ -24,7 +24,7 @@ class TestChatbotAdapter(Adapter):
             return f"{response} My name is credence"
         else:
             return None
-    
+
     def is_greeting(self, message):
         return "Hi" in message or "Hello" in message
 
