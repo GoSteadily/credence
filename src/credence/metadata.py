@@ -21,14 +21,14 @@ def clear():
     cache = {}
 
 
-def get_value(path: str):
-    try: 
+def get_value(key: str):
+    try:
         global cache
-        return cache[path]
+        return cache[key]
     except KeyError as e:
-        raise Exception(f"Could not find {path} in metadata. Available keys are: {list(cache.keys())}") from e
+        raise Exception(f"Could not find {key} in metadata. Available keys are: {list(cache.keys())}") from e
 
 
-def set_value(path: str, value: str):
+def set_value(key: str, value: str):
     global cache
-    cache[path] = value
+    cache[key] = value

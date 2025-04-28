@@ -1,6 +1,7 @@
 from credence import metadata
 
 
-def collect_metadata(path: str, value: str):
+def collect_metadata(items: dict[str, str]):
     if metadata.active_adapter:
-        metadata.set_value(path, value)
+        for key, value in items.items():
+            metadata.set_value(key, value)
