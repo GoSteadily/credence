@@ -34,10 +34,19 @@ class ChatbotExpectations(Step):
     expectations: List[ChatbotCheck]
 
 
+@dataclass
+class ChatbotIgnoresMessage(Step):
+    pass
+
+
 class Chatbot(Step):
     @staticmethod
     def expect(expectations: List[ChatbotCheck]):
         return ChatbotExpectations(expectations=expectations)
+
+    @staticmethod
+    def ignores_mesage():
+        return ChatbotIgnoresMessage()
 
 
 class Response(Step):

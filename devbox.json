@@ -19,6 +19,7 @@
       "alias l='lint'",
       "alias lf='lint --fix'",
       "alias t='pytest'",
+      "alias tv='pytest -s -o log_cli=true'",
       "alias tc='typecheck'",
       ". $VENV_DIR/bin/activate",
       "uv sync",

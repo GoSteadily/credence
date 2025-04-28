@@ -5,16 +5,26 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 from queue import Empty, Queue
+from textwrap import dedent
 from typing import Any, Dict, List, Tuple
 
 from instructor import Instructor
 from openai.types.chat import ChatCompletionAssistantMessageParam, ChatCompletionMessageParam, ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam
-from termcolor import colored, cprint
+from termcolor import cprint
 
 from credence.conversation import Conversation
-from credence.step.chatbot import ChatbotExpectations, ChatbotResponseAICheck, ChatbotResponseContains, ChatbotResponseEquals, ChatbotResponseRegexMatch
+from credence.exceptions import ColoredException
+from credence.step.chatbot import (
+    ChatbotExpectations,
+    ChatbotIgnoresMessage,
+    ChatbotResponseAICheck,
+    ChatbotResponseContains,
+    ChatbotResponseEquals,
+    ChatbotResponseRegexMatch,
+)
 from credence.step.check import ContentTestResult
 from credence.step.execute import Execute
+from credence.step.nested import Nested
 from credence.step.user import UserGenerated, UserMessage
 
 logger = logging.getLogger(__name__)
@@ -67,8 +77,14 @@ class TestResult:
             cprint(name, color, attrs=["bold"], end="")
             cprint(message)
 
-        for error in self.errors:
-            cprint(error, "red", attrs=[])
+        if self.errors:
+            cprint("-------------- Errors --------------", "red", attrs=["bold"])
+
+            for error in self.errors:
+                if isinstance(error, ColoredException):
+                    print(error.colored_message)
+                else:
+                    cprint(error, "red", attrs=[])
 
         cprint("")
 
@@ -123,7 +139,9 @@ class Adapter(abc.ABC):
         return self
 
     def test(self, conversation: Conversation) -> TestResult:
-        """ """
+        """
+        TODO: Add docs
+        """
         start_time = time.time()
         time_spent_in_generation = 0.0
 
@@ -132,12 +150,12 @@ class Adapter(abc.ABC):
 
         try:
             for step in conversation.steps:
-                if isinstance(step, Conversation):
-                    result = self.test(step)
+                if isinstance(step, Nested):
+                    result = self.test(step.conversation)
                     if result.errors:
                         return result
 
-                if isinstance(step, Execute):
+                elif isinstance(step, Execute):
                     self._call_function(step)
 
                 elif isinstance(step, UserMessage):
@@ -169,12 +187,14 @@ class Adapter(abc.ABC):
                     generation_start_time = time.time()
 
                     chatbot_response = self._get_queued_chatbot_message()
-                    self._check_expectations_were_met(
+                    self._check_chatbot_expectations(
                         step=step,
                         messages=self.messages,
                         chatbot_response=chatbot_response,
                     )
                     time_spent_in_generation += time.time() - generation_start_time
+                elif isinstance(step, ChatbotIgnoresMessage):
+                    self._assert_no_chatbot_messages()
 
         except Exception as e:
             logger.exception("Test failed")
@@ -215,11 +235,10 @@ class Adapter(abc.ABC):
             raise Exception("Expected a chatbot message but none had been sent") from e
 
     def user_message_prompt(self):
-        return """
-You are a system that simulates user conversations.
-
-Pretend you are a user and complete this conversation.
-"""
+        return dedent("""
+            You are now simulating a user who is interacting with a system.
+            You are not an assistant.
+            """).strip()
 
     def _generate_user_message(
         self,
@@ -229,10 +248,22 @@ Pretend you are a user and complete this conversation.
     ):
         llm_messages: List[ChatCompletionMessageParam] = []
 
-        for role, message in messages:
-            llm_messages.append(role.invert().to_llm_message(message))
+        prompt = self.user_message_prompt()
+        if messages:
+            context = "\nContext:"
+            for role, message in messages:
+                context += f"{str(role)}: {message}\n"
 
-        llm_messages.append(ChatCompletionSystemMessageParam(role="system", content=self.user_message_prompt() + "\n" + step.prompt))
+            prompt += context
+
+        llm_messages.append(
+            ChatCompletionSystemMessageParam(
+                role="system",
+                content=prompt,
+            )
+        )
+
+        llm_messages.append(Role.Chatbot.to_llm_message(step.prompt))
 
         return client.chat.completions.create(
             model=self.model_name(),
@@ -240,7 +271,7 @@ Pretend you are a user and complete this conversation.
             messages=llm_messages,
         )
 
-    def _check_expectations_were_met(
+    def _check_chatbot_expectations(
         self,
         step: ChatbotExpectations,
         messages: List[Tuple[Role, str]],
@@ -255,14 +286,8 @@ Pretend you are a user and complete this conversation.
                     messages=messages,
                     requirement=expectation.prompt,
                 )
-                if not result.was_met:
-                    raise Exception(
-                        f"""
-chatbot response did not pass AI check:
-{colored("requirement", attrs=["bold"])}: {expectation.prompt}
-{colored("     reason", attrs=["bold"])}: {result.reason}
-{colored("   response", attrs=["bold"])}: {chatbot_response}"""
-                    )
+
+                result.maybe_raise_error(chatbot_response=chatbot_response)
 
             elif isinstance(expectation, ChatbotResponseEquals):
                 if expectation.string != chatbot_response:
