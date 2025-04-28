@@ -19,7 +19,7 @@ class MathChatbotAdapter(Adapter):
         self.chatbot = MathChatbot()
 
     def handle_message(self, message: str):
-        user = self.context.get("name")
+        user = self.context.get("user")
         return self.chatbot.handle_message(user=user, message=message)
 
     def create_client(self):
@@ -33,7 +33,7 @@ class MathChatbotAdapter(Adapter):
         return os.environ["MODEL_NAME"]
 
     def register_user(self, name: str):
-        self.add_to_context("name", name)
+        self.add_to_context("user", name)
 
 
 def conversations():
