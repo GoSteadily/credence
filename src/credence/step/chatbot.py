@@ -71,10 +71,26 @@ class Chatbot(Step):
 class Metadata(Step):
     field: str
 
-    def contains(self, string: str):
+    def contains(self, value: str):
+        if not isinstance(value, str):
+            try:
+                string = str(value)
+            except Exception as e:
+                raise Exception('`Metadata("...").contains` could not convert value into str') from e
+
+        else:
+            string = value
         return ChatbotMetadataContains(key=self.field, string=string)
 
-    def equals(self, string: str):
+    def equals(self, value: str):
+        if not isinstance(value, str):
+            try:
+                string = str(value)
+            except Exception as e:
+                raise Exception('`Metadata("...").equals` could not convert value into str') from e
+
+        else:
+            string = value
         return ChatbotMetadataEquals(key=self.field, string=string)
 
     def re_match(self, regexp: str):

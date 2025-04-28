@@ -17,7 +17,9 @@ class MathChatbot:
             # Only registered users can ask math questions
             if user:
                 message = message.removeprefix("math:")
-                return str(eval(message))
+                result = eval(message)
+                credence.collect_metadata({"chatbot.math.result": result})
+                return str(result)
             else:
                 return
 

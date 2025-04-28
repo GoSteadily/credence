@@ -66,6 +66,7 @@ def conversations():
                     [
                         Response.equals("2"),
                         Metadata("chatbot.handler").equals("math"),
+                        Metadata("chatbot.math.result").equals(2),
                     ]
                 ),
             ],
