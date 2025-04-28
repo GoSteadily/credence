@@ -10,6 +10,24 @@ class ChatbotCheck:
 
 
 @dataclass
+class ChatbotMetadataContains(ChatbotCheck):
+    key: str
+    string: str
+
+
+@dataclass
+class ChatbotMetadataEquals(ChatbotCheck):
+    key: str
+    string: str
+
+
+@dataclass
+class ChatbotMetadataRegexMatch(ChatbotCheck):
+    key: str
+    pattern: re.Pattern
+
+
+@dataclass
 class ChatbotResponseAICheck(ChatbotCheck):
     prompt: str
 
@@ -47,6 +65,24 @@ class Chatbot(Step):
     @staticmethod
     def ignores_mesage():
         return ChatbotIgnoresMessage()
+
+
+@dataclass
+class Metadata(Step):
+    field: str
+
+    def contains(self, string: str):
+        return ChatbotMetadataContains(key=self.field, string=string)
+
+    def equals(self, string: str):
+        return ChatbotMetadataEquals(key=self.field, string=string)
+
+    def re_match(self, regexp: str):
+        try:
+            pattern = re.compile(regexp)
+            return ChatbotMetadataRegexMatch(key=self.field, pattern=pattern)
+        except Exception as e:
+            raise Exception(f"Invalid regex: `{regexp}`") from e
 
 
 class Response(Step):

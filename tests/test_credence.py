@@ -8,7 +8,7 @@ from support.chatbot import MathChatbot
 from credence.adapter import Adapter
 from credence.conversation import Conversation
 from credence.step import Step
-from credence.step.chatbot import Chatbot, Response
+from credence.step.chatbot import Chatbot, Metadata, Response
 from credence.step.execute import Execute
 from credence.step.user import User
 
@@ -47,6 +47,9 @@ def conversations():
                     Response.ai_check(should="respond with user's name John and introduce itself as 'credence'"),
                     Response.contains(string="John"),
                     Response.re_match(regexp="Hi|Hello"),
+                    Metadata("chatbot.handler").equals("greeting"),
+                    Metadata("chatbot.handler").contains("greet"),
+                    Metadata("chatbot.handler").re_match("gre{2}"),
                 ]
             ),
         ],
@@ -59,7 +62,12 @@ def conversations():
             steps=[
                 Step.nested_conversation(user_registration_flow),
                 User.message("math:1 + 1"),
-                Chatbot.expect([Response.equals("2")]),
+                Chatbot.expect(
+                    [
+                        Response.equals("2"),
+                        Metadata("chatbot.handler").equals("math"),
+                    ]
+                ),
             ],
         ),
         Conversation(
@@ -86,7 +94,9 @@ def conversations():
 
 @pytest.mark.parametrize("conversation", conversations())
 def test_maa(conversation):
-    result = MathChatbotAdapter().set_context().test(conversation)
+    adapter = MathChatbotAdapter()
+    # .set_context(a=1, b=2)
 
+    result = adapter.test(conversation)
     result.print()
-    assert result.errors == []
+    assert result.errors == [], f"Found {len(result.errors)} error(s) when evaluating the test"

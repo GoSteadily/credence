@@ -1,6 +1,10 @@
+import credence
+
+
 class MathChatbot:
     def handle_message(self, user: str | None, message: str):
         if self.is_greeting(message):
+            credence.collect_metadata("chatbot.handler", "greeting")
             response = "Hello there."
 
             if user:
@@ -9,6 +13,7 @@ class MathChatbot:
             return f"{response} My name is credence"
 
         elif self.is_math_question(message):
+            credence.collect_metadata("chatbot.handler", "math")
             # Only registered users can ask math questions
             if user:
                 message = message.removeprefix("math:")

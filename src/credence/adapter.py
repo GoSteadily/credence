@@ -17,6 +17,9 @@ from credence.exceptions import ColoredException
 from credence.step.chatbot import (
     ChatbotExpectations,
     ChatbotIgnoresMessage,
+    ChatbotMetadataContains,
+    ChatbotMetadataEquals,
+    ChatbotMetadataRegexMatch,
     ChatbotResponseAICheck,
     ChatbotResponseContains,
     ChatbotResponseEquals,
@@ -97,6 +100,18 @@ class Adapter(abc.ABC):
         self.client = None
         self.messages = None
 
+        from credence import metadata
+
+        metadata.set_adapter(self)
+
+    def __del__(self):
+        try:
+            from credence import metadata
+
+            metadata.clear_adapter(None)
+        except Exception:
+            pass
+
     @abc.abstractmethod
     def handle_message(self, message: str):
         """
@@ -162,7 +177,11 @@ class Adapter(abc.ABC):
                     self._assert_no_chatbot_messages()
                     self.messages.append((Role.User, step.text))
 
+                    from credence import metadata
+
+                    metadata.clear()
                     chatbot_response = self.handle_message(step.text)
+
                     if chatbot_response:
                         self.queue.put_nowait(chatbot_response)
                         self.messages.append((Role.Chatbot, chatbot_response))
@@ -277,6 +296,8 @@ class Adapter(abc.ABC):
         messages: List[Tuple[Role, str]],
         chatbot_response: str,
     ):
+        from credence import metadata
+
         for expectation in step.expectations:
             if isinstance(expectation, ChatbotResponseAICheck):
                 client = self._client()
@@ -292,6 +313,7 @@ class Adapter(abc.ABC):
             elif isinstance(expectation, ChatbotResponseEquals):
                 if expectation.string != chatbot_response:
                     raise Exception(f"chatbot response is not equal to `{expectation.string}`: `{chatbot_response}`")
+
             elif isinstance(expectation, ChatbotResponseContains):
                 if expectation.string not in chatbot_response:
                     raise Exception(f"`{expectation.string}` not in chatbot response: `{chatbot_response}`")
@@ -299,3 +321,20 @@ class Adapter(abc.ABC):
             elif isinstance(expectation, ChatbotResponseRegexMatch):
                 if re.search(expectation.pattern, chatbot_response) is None:
                     raise Exception(f"{expectation.pattern} not found in chatbot response: `{chatbot_response}`")
+
+            elif isinstance(expectation, ChatbotMetadataEquals):
+                value = metadata.get_value(expectation.key)
+                if metadata.get_value(expectation.key) != expectation.string:
+                    raise Exception(f"Expected metadata[`{expectation.key}`] to equal `{expectation.string}`, but found: `{value}`")
+
+            elif isinstance(expectation, ChatbotMetadataContains):
+                value = metadata.get_value(expectation.key)
+                if expectation.string not in value:
+                    raise Exception(f"Expected metadata[`{expectation.key}`] to contain `{expectation.string}`, but found: `{value}`")
+
+            elif isinstance(expectation, ChatbotMetadataRegexMatch):
+                value = metadata.get_value(expectation.key)
+                if re.search(expectation.pattern, value) is None:
+                    raise Exception(f"Expected metadata[`{expectation.key}`] to match {expectation.pattern}, found: `{value}`")
+
+        metadata.clear()
