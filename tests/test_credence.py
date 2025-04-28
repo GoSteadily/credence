@@ -3,6 +3,7 @@ import os
 import instructor
 import openai
 import pytest
+from support.chatbot import MathChatbot
 
 from credence.adapter import Adapter
 from credence.conversation import Conversation
@@ -10,7 +11,6 @@ from credence.step import Step
 from credence.step.chatbot import Chatbot, Response
 from credence.step.execute import Execute
 from credence.step.user import User
-from test_chatbot import MathChatbot
 
 
 class MathChatbotAdapter(Adapter):
@@ -21,15 +21,6 @@ class MathChatbotAdapter(Adapter):
     def handle_message(self, message: str):
         user = self.context.get("name")
         return self.chatbot.handle_message(user=user, message=message)
-
-    def is_greeting(self, message):
-        return "Hi" in message or "Hello" in message
-
-    def is_math_question(self, message):
-        return message.startswith("math:")
-
-    def is_user_registered(self):
-        return self.context.get("name") is not None
 
     def create_client(self):
         client = openai.OpenAI(

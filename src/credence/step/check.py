@@ -24,10 +24,7 @@ class ContentTestResult(BaseModel):
 
     @staticmethod
     def check_requirement(
-        client: instructor.Instructor,
-        model_name: str,
-        messages: List[Tuple[Any, str]],
-        requirement: str,
+        client: instructor.Instructor, model_name: str, messages: List[Tuple[Any, str]], requirement: str, retries: int = 1
     ) -> "ContentTestResult":
         from credence.adapter import Role
 
@@ -71,6 +68,15 @@ class ContentTestResult(BaseModel):
         result.requirement = requirement
 
         logger.debug(result)
+
+        if not result.requirement_met and retries > 0:
+            return ContentTestResult.check_requirement(
+                client=client,
+                model_name=model_name,
+                messages=messages,
+                requirement=requirement,
+                retries=retries - 1,
+            )
 
         return result
 
