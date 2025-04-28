@@ -1,4 +1,5 @@
 import logging
+from textwrap import dedent
 from typing import Any, List, Tuple
 
 import instructor
@@ -51,11 +52,13 @@ class ContentTestResult(BaseModel):
             ),
             ChatCompletionUserMessageParam(
                 role="user",
-                content=f"""
-                    Do the chatbot responses match the following criteria:
+                content=dedent(
+                    f"""
+                    Does the assistant's final response match the following criteria:
 
                     {requirement}
-                    """.strip(),
+                    """
+                ).strip(),
             ),
         ]
 

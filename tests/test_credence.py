@@ -10,28 +10,17 @@ from credence.step import Step
 from credence.step.chatbot import Chatbot, Response
 from credence.step.execute import Execute
 from credence.step.user import User
+from test_chatbot import MathChatbot
 
 
 class MathChatbotAdapter(Adapter):
+    def __init__(self):
+        super().__init__()
+        self.chatbot = MathChatbot()
+
     def handle_message(self, message: str):
-        if self.is_greeting(message):
-            response = "Hello there."
-
-            if self.context.get("name"):
-                response = f"Hi {self.context['name']}."
-
-            return f"{response} My name is credence"
-
-        elif self.is_math_question(message):
-            # Only registered users can ask math questions
-            if self.is_user_registered():
-                message = message.removeprefix("math:")
-                return str(eval(message))
-            else:
-                return
-
-        else:
-            return None
+        user = self.context.get("name")
+        return self.chatbot.handle_message(user=user, message=message)
 
     def is_greeting(self, message):
         return "Hi" in message or "Hello" in message
