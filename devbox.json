@@ -7,7 +7,7 @@
     "shellcheck": "latest",
     "uv": "latest"
   },
-  "//env_from": ".env",
+  "env_from": ".env",
   "env": {
     "PATH": "$PWD/bin:$PATH",
     "PROJECT": "$PWD"

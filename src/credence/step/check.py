@@ -24,7 +24,13 @@ class ContentTestResult(BaseModel):
 
     @staticmethod
     def check_requirement(
-        client: instructor.Instructor, model_name: str, messages: List[Tuple[Any, str]], requirement: str, retries: int = 1
+        client: instructor.Instructor,
+        model_name: str,
+        messages: List[Tuple[Any, str]],
+        requirement: str,
+        # For brittle tests, increase retries to give the LLM
+        # multiple chances to mark a requirement as met
+        retries: int = 0,
     ) -> "ContentTestResult":
         from credence.adapter import Role
 
@@ -63,6 +69,8 @@ class ContentTestResult(BaseModel):
             model=model_name,
             response_model=ContentTestResult,
             messages=request_messages,
+            # If the response is invalid, retry once
+            max_retries=1,
         )
 
         result.requirement = requirement

@@ -30,6 +30,8 @@ class ChatbotMetadataRegexMatch(ChatbotCheck):
 @dataclass
 class ChatbotResponseAICheck(ChatbotCheck):
     prompt: str
+    # Increase the number of retries for brittle tests
+    retries: int = 0
 
 
 @dataclass
@@ -103,8 +105,8 @@ class Metadata(Step):
 
 class Response(Step):
     @staticmethod
-    def ai_check(should: str):
-        return ChatbotResponseAICheck(prompt=should)
+    def ai_check(should: str, retries: int = 0):
+        return ChatbotResponseAICheck(prompt=should, retries=retries)
 
     @staticmethod
     def contains(string: str):
