@@ -8,7 +8,7 @@ class MathChatbot:
             response = "Hello there."
 
             if user:
-                response = f"Hi {user}."
+                response = f"Hi, {user}."
 
             return f"{response} My name is credence"
 

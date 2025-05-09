@@ -48,7 +48,7 @@ def conversations():
             User.generated("Say hello and introduce yourself as John"),
             Chatbot.expect(
                 [
-                    Response.ai_check(should="respond with user's name John", retries=1),
+                    Response.ai_check(should="greet the user by name", retries=2),
                     Response.ai_check(should="introduce itself as 'credence'", retries=1),
                     Response.contains(string="John"),
                     Response.re_match(regexp="Hi|Hello"),

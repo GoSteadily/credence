@@ -89,7 +89,7 @@ class Adapter(abc.ABC):
         TODO: Add docs
         """
         start_time = time.time()
-        time_spent_in_generation = 0.0
+        testing_time = 0.0
 
         if self.messages is None:
             self.messages = []
@@ -98,8 +98,11 @@ class Adapter(abc.ABC):
             for step in conversation.steps:
                 if isinstance(step, Nested):
                     result = self.test(step.conversation)
+                    testing_time += result.testing_time_ms / 1000
                     if result.errors:
                         result.conversation = conversation
+                        result.chatbot_time_ms = round((time.time() - start_time - testing_time) * 1000)
+                        result.testing_time_ms = round(testing_time * 1000)
                         return result
 
                 elif isinstance(step, Execute):
@@ -125,7 +128,7 @@ class Adapter(abc.ABC):
 
                     client = self._client()
                     text = self._generate_user_message(client=client, step=step, messages=self.messages)
-                    time_spent_in_generation += time.time() - generation_start_time
+                    testing_time += time.time() - generation_start_time
 
                     self.messages.append((Role.User, text))
 
@@ -143,7 +146,7 @@ class Adapter(abc.ABC):
                         messages=self.messages,
                         chatbot_response=chatbot_response,
                     )
-                    time_spent_in_generation += time.time() - generation_start_time
+                    testing_time += time.time() - generation_start_time
                 elif isinstance(step, ChatbotIgnoresMessage):
                     self._assert_no_chatbot_messages()
 
@@ -153,16 +156,16 @@ class Adapter(abc.ABC):
                 conversation=conversation,
                 messages=self.messages,
                 errors=[e],
-                time_taken_ms=round((time.time() - start_time) * 1000),
-                chatbot_time_ms=round((time.time() - start_time - time_spent_in_generation) * 1000),
+                testing_time_ms=round(testing_time * 1000),
+                chatbot_time_ms=round((time.time() - start_time - testing_time) * 1000),
             )
 
         return TestResult(
             conversation=conversation,
             messages=self.messages,
             errors=[],
-            time_taken_ms=round((time.time() - start_time) * 1000),
-            chatbot_time_ms=round((time.time() - start_time - time_spent_in_generation) * 1000),
+            testing_time_ms=round(testing_time * 1000),
+            chatbot_time_ms=round((time.time() - start_time - testing_time) * 1000),
         )
 
     def _call_function(self, step: Execute):

@@ -13,16 +13,17 @@ class TestResult:
     messages: List[Tuple[Role, str]]
     errors: List[Any]
     conversation: Conversation
-    time_taken_ms: int
     chatbot_time_ms: int
+    testing_time_ms: int
 
     def print(self):
         cprint("")
         cprint("------------ TestResult ------------", attrs=["bold"])
         cprint(self.conversation.title)
         cprint("------------------------------------")
-        cprint(f"   Test Time:  {self.time_taken_ms / 1000}s")
-        cprint(f"Handler Time:  {self.chatbot_time_ms / 1000}s")
+        cprint(f"  Total Time:  {(self.chatbot_time_ms + self.testing_time_ms) / 1000}s")
+        cprint(f"   Test Time:  {self.testing_time_ms / 1000}s")
+        cprint(f"Chatbot Time:  {self.chatbot_time_ms / 1000}s")
         cprint("------------------------------------\n", attrs=["bold"])
 
         for role, message in self.messages:
@@ -103,14 +104,14 @@ class TestResult:
 <details>
 <summary>
 
-### Runtime - {(self.time_taken_ms - self.chatbot_time_ms) / 1000}s
+### Runtime - {(self.chatbot_time_ms) / 1000}s
 
 </summary>
 
-| Total Time   | {self.time_taken_ms / 1000}s |
+| Total Time   | {(self.chatbot_time_ms + self.testing_time_ms) / 1000}s |
 | ------------ | ------ |
-| Chatbot Time | {(self.time_taken_ms - self.chatbot_time_ms) / 1000}s   |
-| Tester Time | {self.chatbot_time_ms / 1000}s   |
+| Chatbot Time | {self.chatbot_time_ms / 1000}s   |
+| Tester Time  |  {self.testing_time_ms / 1000}s   |
 
 </details>
 
