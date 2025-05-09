@@ -7,7 +7,7 @@
 # set -euo pipefail
 
 project="${PROJECT:?}"
-output="tmp/test_cases/$(date -u '+%Y-%m-%d_%H:%M:%SZ')-$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse --short=8 HEAD).md"
+output="tmp/test_cases/$(date -u '+%Y-%m-%d_%H-%M-%SZ')-$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse --short=8 HEAD).md"
 
 mkdir -p tmp/test_cases
 rm -f tmp/test_cases/*.case.md
