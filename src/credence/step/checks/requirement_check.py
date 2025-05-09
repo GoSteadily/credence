@@ -116,12 +116,11 @@ class ContentTestResult(BaseModel):
         if markdown:
             return (
                 f"chatbot response did not pass AI check:<br>\n\n"
-                f"| - |  |\n"
-                f"| --- | --- |\n"
                 f"| **requirement** | {self.requirement} |\n"
-                f"|    **response** | {chatbot_response} |"
-                f"|     **was met** | `False` |"
-                f"|      **reason** | {self.reason} |\n"
+                f"| --------------- | ------------------ |\n"
+                f"|    **response** | {chatbot_response} |\n"
+                f"|     **was met** | `False`            |\n"
+                f"|      **reason** | {self.reason}      |\n"
             )
         else:
             return (
