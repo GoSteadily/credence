@@ -107,8 +107,6 @@ class TestResult:
 
 </summary>
 
-Runtime
-
 | Total Time   | {self.time_taken_ms / 1000}s |
 | ------------ | ------ |
 | Chatbot Time | {(self.time_taken_ms - self.chatbot_time_ms) / 1000}s   |
