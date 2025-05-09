@@ -119,8 +119,9 @@ class ContentTestResult(BaseModel):
                 f"| - |  |\n"
                 f"| --- | --- |\n"
                 f"| **requirement** | {self.requirement} |\n"
-                f"|      **reason** | {self.reason} |\n"
                 f"|    **response** | {chatbot_response} |"
+                f"|     **was met** | `False` |"
+                f"|      **reason** | {self.reason} |\n"
             )
         else:
             return (
