@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+#
+# Usage: generate_report
+#
+
+# set -euo pipefail
+
+project="${PROJECT:?}"
+output="tmp/test_cases/output.md"
+
+mkdir -p tmp/test_cases
+rm -f tmp/test_cases/*.case.md
+
+printf "|   | Details |\n" > $output
+printf "|---|---|\n" >> $output
+printf "| Branch | $(git rev-parse --abbrev-ref HEAD) |\n" >> $output
+printf "| Commit | $(git rev-parse --short=8 HEAD) |\n" >> $output
+printf "| Timestamp | $(date -u '+%Y-%m-%d %H:%M:%SZ') UTC |\n" >> $output
+printf "\n" >> $output
+pytest -s -o log_cli=true -k test_maa 
+
+cat tmp/test_cases/*.case.md >> $output

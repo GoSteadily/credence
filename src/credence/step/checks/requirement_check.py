@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from termcolor import colored
 
 from credence.exceptions import ColoredException
+from credence.role import Role
 
 logger = logging.getLogger(__name__)
 
@@ -32,27 +33,33 @@ class ContentTestResult(BaseModel):
         # multiple chances to mark a requirement as met
         retries: int = 0,
     ) -> "ContentTestResult":
-        from credence.adapter import Role
-
-        chat_log = ""
-        for _role, message in messages:
-            role: Role = _role
-            chat_log = chat_log + f"{role.value}: {message}\n"
         request_messages: List[ChatCompletionMessageParam] = [
             ChatCompletionSystemMessageParam(
                 role="system",
                 content="""
                     You are quality assurance system that confirms whether the answers given to a specific question meet some requirements.
                     """.strip(),
-            ),
-            ChatCompletionUserMessageParam(
-                role="user",
-                content=f"""
+            )
+        ]
+
+        if messages:
+            chat_log = ""
+            for _role, message in messages:
+                role: Role = _role
+                chat_log = chat_log + f"{role.value}: {message}\n"
+
+            request_messages.append(
+                ChatCompletionUserMessageParam(
+                    role="user",
+                    content=f"""
                     This is the chatbot log:
 
                     {chat_log}
                     """.strip(),
-            ),
+                )
+            )
+
+        request_messages.append(
             ChatCompletionUserMessageParam(
                 role="user",
                 content=dedent(
@@ -63,7 +70,7 @@ class ContentTestResult(BaseModel):
                     """
                 ).strip(),
             ),
-        ]
+        )
 
         result: ContentTestResult = client.chat.completions.create(
             model=model_name,
@@ -76,7 +83,6 @@ class ContentTestResult(BaseModel):
         result.requirement = requirement
 
         logger.debug(result)
-
         if not result.requirement_met and retries > 0:
             return ContentTestResult.check_requirement(
                 client=client,
@@ -88,9 +94,9 @@ class ContentTestResult(BaseModel):
 
         return result
 
-    def maybe_raise_error(self, chatbot_response: str):
+    def generate_error(self, chatbot_response: str):
         if not self.requirement_met:
-            raise ColoredException(
+            return ColoredException(
                 self._exception_message(
                     chatbot_response=chatbot_response,
                     colorize=False,
@@ -99,15 +105,30 @@ class ContentTestResult(BaseModel):
                     chatbot_response=chatbot_response,
                     colorize=True,
                 ),
+                self._exception_message(
+                    chatbot_response=chatbot_response,
+                    colorize=False,
+                    markdown=True,
+                ),
             )
 
-    def _exception_message(self, chatbot_response: str, colorize: bool):
-        return (
-            f"chatbot response did not pass AI check:\n"
-            f"{maybe_colored(colorize, 'requirement', attrs=['bold'])}: {self.requirement}\n"
-            f"{maybe_colored(colorize, '     reason', attrs=['bold'])}: {self.reason}\n"
-            f"{maybe_colored(colorize, '   response', attrs=['bold'])}: {chatbot_response}"
-        )
+    def _exception_message(self, chatbot_response: str, colorize: bool, markdown: bool = False):
+        if markdown:
+            return (
+                f"chatbot response did not pass AI check:<br>\n\n"
+                f"| - |  |\n"
+                f"| --- | --- |\n"
+                f"| **requirement** | {self.requirement} |\n"
+                f"|      **reason** | {self.reason} |\n"
+                f"|    **response** | {chatbot_response} |"
+            )
+        else:
+            return (
+                f"chatbot response did not pass AI check:\n"
+                f"{maybe_colored(colorize, 'requirement', attrs=['bold'])}: {self.requirement}\n"
+                f"{maybe_colored(colorize, '     reason', attrs=['bold'])}: {self.reason}\n"
+                f"{maybe_colored(colorize, '   response', attrs=['bold'])}: {chatbot_response}"
+            )
 
 
 def maybe_colored(colorize: bool, str, **kwargs):

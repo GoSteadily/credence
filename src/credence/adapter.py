@@ -1,95 +1,26 @@
 import abc
 import logging
-import re
 import time
-from dataclasses import dataclass
-from enum import Enum
 from queue import Empty, Queue
 from textwrap import dedent
 from typing import Any, Dict, List, Tuple
 
 from instructor import Instructor
-from openai.types.chat import ChatCompletionAssistantMessageParam, ChatCompletionMessageParam, ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam
-from termcolor import cprint
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionSystemMessageParam
 
-from credence.conversation import Conversation
-from credence.exceptions import ColoredException
+from credence.conversation import Conversation, Nested
+from credence.role import Role
 from credence.step.chatbot import (
     ChatbotExpectations,
     ChatbotIgnoresMessage,
-    ChatbotMetadataContains,
-    ChatbotMetadataEquals,
-    ChatbotMetadataRegexMatch,
-    ChatbotResponseAICheck,
-    ChatbotResponseContains,
-    ChatbotResponseEquals,
-    ChatbotResponseRegexMatch,
 )
-from credence.step.check import ContentTestResult
+from credence.step.checks.metadata_check import ChatbotMetadataCheck
+from credence.step.checks.response_check import ChatbotResponseAICheck, ChatbotResponseCheck
 from credence.step.execute import Execute
-from credence.step.nested import Nested
 from credence.step.user import UserGenerated, UserMessage
+from credence.test_result import TestResult
 
 logger = logging.getLogger(__name__)
-
-
-class Role(str, Enum):
-    Chatbot = "assistant"
-    User = "user"
-
-    def invert(self):
-        match self:
-            case Role.Chatbot:
-                return Role.User
-            case Role.User:
-                return Role.Chatbot
-
-    def to_llm_message(self, message: str):
-        match self:
-            case Role.Chatbot:
-                return ChatCompletionUserMessageParam(role="user", content=message)
-            case Role.User:
-                return ChatCompletionAssistantMessageParam(role="assistant", content=message)
-
-
-@dataclass
-class TestResult:
-    title: str
-    messages: List[Tuple[Role, str]]
-    errors: List[Any]
-    time_taken_ms: int
-    chatbot_time_ms: int
-
-    def print(self):
-        cprint("")
-        cprint("------------ TestResult ------------", attrs=["bold"])
-        cprint(self.title)
-        cprint("------------------------------------")
-        cprint(f"   Test Time:  {self.time_taken_ms / 1000}s")
-        cprint(f"Handler Time:  {self.chatbot_time_ms / 1000}s")
-        cprint("------------------------------------\n", attrs=["bold"])
-
-        for role, message in self.messages:
-            if role == Role.User:
-                color = "blue"
-                name = "user: "
-            if role == Role.Chatbot:
-                color = "green"
-                name = "asst: "
-
-            cprint(name, color, attrs=["bold"], end="")
-            cprint(message)
-
-        if self.errors:
-            cprint("-------------- Errors --------------", "red", attrs=["bold"])
-
-            for error in self.errors:
-                if isinstance(error, ColoredException):
-                    print(error.colored_message)
-                else:
-                    cprint(error, "red", attrs=[])
-
-        cprint("")
 
 
 class Adapter(abc.ABC):
@@ -168,6 +99,7 @@ class Adapter(abc.ABC):
                 if isinstance(step, Nested):
                     result = self.test(step.conversation)
                     if result.errors:
+                        result.conversation = conversation
                         return result
 
                 elif isinstance(step, Execute):
@@ -218,7 +150,7 @@ class Adapter(abc.ABC):
         except Exception as e:
             logger.exception("Test failed")
             return TestResult(
-                title=conversation.title,
+                conversation=conversation,
                 messages=self.messages,
                 errors=[e],
                 time_taken_ms=round((time.time() - start_time) * 1000),
@@ -226,7 +158,7 @@ class Adapter(abc.ABC):
             )
 
         return TestResult(
-            title=conversation.title,
+            conversation=conversation,
             messages=self.messages,
             errors=[],
             time_taken_ms=round((time.time() - start_time) * 1000),
@@ -300,41 +232,13 @@ class Adapter(abc.ABC):
 
         for expectation in step.expectations:
             if isinstance(expectation, ChatbotResponseAICheck):
-                client = self._client()
-                result = ContentTestResult.check_requirement(
-                    client=client,
-                    model_name=self.model_name(),
-                    messages=messages,
-                    requirement=expectation.prompt,
-                )
+                expectation.check(value=messages, adapter=self)
 
-                result.maybe_raise_error(chatbot_response=chatbot_response)
+            elif isinstance(expectation, ChatbotResponseCheck):
+                expectation.check(value=chatbot_response)
 
-            elif isinstance(expectation, ChatbotResponseEquals):
-                if expectation.string != chatbot_response:
-                    raise Exception(f"chatbot response is not equal to `{expectation.string}`: `{chatbot_response}`")
-
-            elif isinstance(expectation, ChatbotResponseContains):
-                if expectation.string not in chatbot_response:
-                    raise Exception(f"`{expectation.string}` not in chatbot response: `{chatbot_response}`")
-
-            elif isinstance(expectation, ChatbotResponseRegexMatch):
-                if re.search(expectation.pattern, chatbot_response) is None:
-                    raise Exception(f"{expectation.pattern} not found in chatbot response: `{chatbot_response}`")
-
-            elif isinstance(expectation, ChatbotMetadataEquals):
+            elif isinstance(expectation, ChatbotMetadataCheck):
                 value = metadata.get_value(expectation.key)
-                if metadata.get_value(expectation.key) != expectation.string:
-                    raise Exception(f"Expected metadata[`{expectation.key}`] to equal `{expectation.string}`, but found: `{value}`")
-
-            elif isinstance(expectation, ChatbotMetadataContains):
-                value = metadata.get_value(expectation.key)
-                if expectation.string not in value:
-                    raise Exception(f"Expected metadata[`{expectation.key}`] to contain `{expectation.string}`, but found: `{value}`")
-
-            elif isinstance(expectation, ChatbotMetadataRegexMatch):
-                value = metadata.get_value(expectation.key)
-                if re.search(expectation.pattern, value) is None:
-                    raise Exception(f"Expected metadata[`{expectation.key}`] to match {expectation.pattern}, found: `{value}`")
+                expectation.check(value)
 
         metadata.clear()
