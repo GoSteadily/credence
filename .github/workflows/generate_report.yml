@@ -1,0 +1,35 @@
+name: "Generate Report"
+
+on: 
+  workflow_dispatch:
+
+jobs:
+  generate_report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add .env
+        run: touch .env
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.11.0
+        with:
+          enable-cache: "true"
+
+      - name: Generate report
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: devbox run generate_report
+
+      - uses: actions/upload-artifact@v4
+        with:
+          # Name of the artifact to upload.
+          # Optional. Default is 'artifact'
+          name: "report.md"
+      
+          # A file, directory or wildcard pattern that describes what to upload
+          # Required.
+          path: "tmp/test_cases/output.md"
+           

@@ -67,8 +67,8 @@ class TestResult:
 ### Conversation
 
 """
-        md += f"|||\n"
-        md += f"|---|---|\n"
+        md += "|||\n"
+        md += "|---|---|\n"
 
         for role, message in self.messages:
             if role == Role.User:
@@ -103,7 +103,7 @@ class TestResult:
 <details>
 <summary>
 
-### Runtime - {(self.time_taken_ms - self.chatbot_time_ms) / 1000}s 
+### Runtime - {(self.time_taken_ms - self.chatbot_time_ms) / 1000}s
 
 </summary>
 

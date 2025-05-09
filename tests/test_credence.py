@@ -34,7 +34,7 @@ class MathChatbotAdapter(Adapter):
         return instructor.from_openai(client, mode=instructor.Mode.TOOLS)
 
     def model_name(self):
-        return os.environ["MODEL_NAME"]
+        return os.environ.get("MODEL_NAME", "gpt-4.1-nano")
 
     def register_user(self, name: str):
         self.add_to_context("user", name)
@@ -253,7 +253,7 @@ Conversation.nested(
                             Response.contains("b\nc"),
                             Response.equals("ab\nc"),
                             Response.ai_check(should="mention \na"),
-                            Response.ai_check(should="there", retries=3)
+                            Response.ai_check(should="there", retries=3),
                         ]
                     ),
                 ],

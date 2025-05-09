@@ -22,10 +22,10 @@ class ChatbotExpectations(Step):
     def __str__(self):
         expectations_str = ""
         for expectation in self.expectations:
-            expectations_str += f"\n"
+            expectations_str += "\n"
             for line in str(expectation).splitlines(keepends=True):
                 expectations_str += f"    {line}"
-            expectations_str += f","
+            expectations_str += ","
 
         closing_str = "]\n"
         if len(self.expectations) > 0:
