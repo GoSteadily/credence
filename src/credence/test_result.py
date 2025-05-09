@@ -131,9 +131,6 @@ Runtime
 ```
 
 </details>
-
----
-
 """
-        md += "\n</details>"
+        md += "\n</details>\n\n---\n\n"
         return md
