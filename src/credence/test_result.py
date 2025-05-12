@@ -104,14 +104,14 @@ class TestResult:
 <details>
 <summary>
 
-### Runtime - {(self.chatbot_time_ms) / 1000}s
+### Time taken - {(self.chatbot_time_ms) / 1000}s
 
 </summary>
 
 | Total Time   | {(self.chatbot_time_ms + self.testing_time_ms) / 1000}s |
 | ------------ | ------ |
 | Chatbot Time | {self.chatbot_time_ms / 1000}s   |
-| Tester Time  |  {self.testing_time_ms / 1000}s   |
+| Testing Time  | {self.testing_time_ms / 1000}s   |
 
 </details>
 

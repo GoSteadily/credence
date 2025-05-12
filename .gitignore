@@ -11,3 +11,5 @@ tmp/
 
 *.pyc
 .vscode/settings.json
+docs/docs/
+docs/sitemap.xml

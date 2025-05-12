@@ -1,13 +1,17 @@
 import re
 from dataclasses import dataclass
 
+from credence.interaction.chatbot.check.ai_content_check import AIContentCheck
+from credence.interaction.chatbot.check.base import BaseCheck
 from credence.role import Role
-from credence.step.checks.chatbot_check import ChatbotCheck
-from credence.step.checks.requirement_check import ContentTestResult
 
 
 @dataclass
-class ChatbotResponseCheck(ChatbotCheck):
+class ChatbotResponseCheck(BaseCheck):
+    """
+    @private
+    """
+
     pass
 
 
@@ -40,7 +44,11 @@ class Response:
 
 
 @dataclass
-class ChatbotResponseAICheck(ChatbotCheck):
+class ChatbotResponseAICheck(BaseCheck):
+    """
+    @private
+    """
+
     prompt: str
     # Increase the number of retries for brittle tests
     retries: int = 0
@@ -60,7 +68,7 @@ class ChatbotResponseAICheck(ChatbotCheck):
         if not isinstance(adapter, Adapter):
             raise Exception(f"{adapter} is not a valid Adapter")
 
-        result = ContentTestResult.check_requirement(
+        result = AIContentCheck.check_requirement(
             client=adapter._client(),
             model_name=adapter.model_name(),
             messages=messages,
@@ -78,6 +86,10 @@ class ChatbotResponseAICheck(ChatbotCheck):
 
 @dataclass
 class ChatbotResponseContains(ChatbotResponseCheck):
+    """
+    @private
+    """
+
     string: str
 
     def __str__(self):
@@ -90,6 +102,10 @@ class ChatbotResponseContains(ChatbotResponseCheck):
 
 @dataclass
 class ChatbotResponseEquals(ChatbotResponseCheck):
+    """
+    @private
+    """
+
     string: str
 
     def __str__(self):
@@ -102,6 +118,10 @@ class ChatbotResponseEquals(ChatbotResponseCheck):
 
 @dataclass
 class ChatbotResponseNotEquals(ChatbotResponseCheck):
+    """
+    @private
+    """
+
     string: str
 
     def __str__(self):
@@ -114,6 +134,10 @@ class ChatbotResponseNotEquals(ChatbotResponseCheck):
 
 @dataclass
 class ChatbotResponseRegexMatch(ChatbotResponseCheck):
+    """
+    @private
+    """
+
     pattern: re.Pattern
 
     def __str__(self):
@@ -125,4 +149,7 @@ class ChatbotResponseRegexMatch(ChatbotResponseCheck):
 
 
 def str_repr(string: str):
+    """
+    @private
+    """
     return f"{string.__repr__()}"

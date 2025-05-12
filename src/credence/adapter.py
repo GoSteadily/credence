@@ -8,16 +8,14 @@ from typing import Any, Dict, List, Tuple
 from instructor import Instructor
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionSystemMessageParam
 
-from credence.conversation import Conversation, Nested
-from credence.role import Role
-from credence.step.chatbot import (
-    ChatbotExpectations,
+from credence.conversation import Conversation
+from credence.interaction.chatbot import (
+    ChatbotResponds,
     ChatbotIgnoresMessage,
 )
-from credence.step.checks.metadata_check import ChatbotMetadataCheck
-from credence.step.checks.response_check import ChatbotResponseAICheck, ChatbotResponseCheck
-from credence.step.execute import Execute
-from credence.step.user import UserGenerated, UserMessage
+from credence.interaction.nested import Nested
+from credence.interaction.user import UserGenerated, UserMessage
+from credence.role import Role
 from credence.test_result import TestResult
 
 logger = logging.getLogger(__name__)
@@ -88,6 +86,9 @@ class Adapter(abc.ABC):
         """
         TODO: Add docs
         """
+
+        from credence.interaction.external import External
+
         start_time = time.time()
         testing_time = 0.0
 
@@ -95,9 +96,9 @@ class Adapter(abc.ABC):
             self.messages = []
 
         try:
-            for step in conversation.steps:
-                if isinstance(step, Nested):
-                    result = self.test(step.conversation)
+            for interaction in conversation.interactions:
+                if isinstance(interaction, Nested):
+                    result = self.test(interaction.conversation)
                     testing_time += result.testing_time_ms / 1000
                     if result.errors:
                         result.conversation = conversation
@@ -105,29 +106,29 @@ class Adapter(abc.ABC):
                         result.testing_time_ms = round(testing_time * 1000)
                         return result
 
-                elif isinstance(step, Execute):
-                    self._call_function(step)
+                elif isinstance(interaction, External):
+                    interaction.call(self)
 
-                elif isinstance(step, UserMessage):
+                elif isinstance(interaction, UserMessage):
                     self._assert_no_chatbot_messages()
-                    self.messages.append((Role.User, step.text))
+                    self.messages.append((Role.User, interaction.text))
 
                     from credence import metadata
 
                     metadata.clear()
-                    chatbot_response = self.handle_message(step.text)
+                    chatbot_response = self.handle_message(interaction.text)
 
                     if chatbot_response:
                         self.queue.put_nowait(chatbot_response)
                         self.messages.append((Role.Chatbot, chatbot_response))
 
-                elif isinstance(step, UserGenerated):
+                elif isinstance(interaction, UserGenerated):
                     self._assert_no_chatbot_messages()
 
                     generation_start_time = time.time()
 
                     client = self._client()
-                    text = self._generate_user_message(client=client, step=step, messages=self.messages)
+                    text = self._generate_user_message(client=client, interaction=interaction, messages=self.messages)
                     testing_time += time.time() - generation_start_time
 
                     self.messages.append((Role.User, text))
@@ -137,17 +138,17 @@ class Adapter(abc.ABC):
                         self.queue.put_nowait(chatbot_response)
                         self.messages.append((Role.Chatbot, chatbot_response))
 
-                elif isinstance(step, ChatbotExpectations):
+                elif isinstance(interaction, ChatbotResponds):
                     generation_start_time = time.time()
 
                     chatbot_response = self._get_queued_chatbot_message()
-                    self._check_chatbot_expectations(
-                        step=step,
+                    interaction._check(
+                        adapter=self,
                         messages=self.messages,
                         chatbot_response=chatbot_response,
                     )
                     testing_time += time.time() - generation_start_time
-                elif isinstance(step, ChatbotIgnoresMessage):
+                elif isinstance(interaction, ChatbotIgnoresMessage):
                     self._assert_no_chatbot_messages()
 
         except Exception as e:
@@ -167,13 +168,6 @@ class Adapter(abc.ABC):
             testing_time_ms=round(testing_time * 1000),
             chatbot_time_ms=round((time.time() - start_time - testing_time) * 1000),
         )
-
-    def _call_function(self, step: Execute):
-        if hasattr(self, step.function_name) and callable(getattr(self, step.function_name)):
-            func = getattr(self, step.function_name)
-            func(**step.args)
-        else:
-            raise Exception(f"Function not defined: {step.function_name}")
 
     def _assert_no_chatbot_messages(self):
         try:
@@ -197,7 +191,7 @@ class Adapter(abc.ABC):
     def _generate_user_message(
         self,
         client: Instructor,
-        step: UserGenerated,
+        interaction: UserGenerated,
         messages: List[Tuple[Role, str]],
     ):
         llm_messages: List[ChatCompletionMessageParam] = []
@@ -217,31 +211,10 @@ class Adapter(abc.ABC):
             )
         )
 
-        llm_messages.append(Role.Chatbot.to_llm_message(step.prompt))
+        llm_messages.append(Role.Chatbot.to_llm_message(interaction.prompt))
 
         return client.chat.completions.create(
             model=self.model_name(),
             response_model=str,
             messages=llm_messages,
         )
-
-    def _check_chatbot_expectations(
-        self,
-        step: ChatbotExpectations,
-        messages: List[Tuple[Role, str]],
-        chatbot_response: str,
-    ):
-        from credence import metadata
-
-        for expectation in step.expectations:
-            if isinstance(expectation, ChatbotResponseAICheck):
-                expectation.check(value=messages, adapter=self)
-
-            elif isinstance(expectation, ChatbotResponseCheck):
-                expectation.check(value=chatbot_response)
-
-            elif isinstance(expectation, ChatbotMetadataCheck):
-                value = metadata.get_value(expectation.key)
-                expectation.check(value)
-
-        metadata.clear()

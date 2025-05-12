@@ -1,19 +1,23 @@
 from dataclasses import dataclass
 
-from credence.step import Step
+from credence.interaction import Interaction
 
 
 @dataclass
-class UserMessage(Step):
+class UserMessage(Interaction):
+    """@private"""
+
     text: str
 
 
 @dataclass
-class UserGenerated(Step):
+class UserGenerated(Interaction):
+    """@private"""
+
     prompt: str
 
 
-class User(Step):
+class User(Interaction):
     @staticmethod
     def message(text: str):
         return UserMessage(text=text)

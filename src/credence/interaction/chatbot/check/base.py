@@ -1,7 +1,9 @@
 import abc
 
 
-class ChatbotCheck(abc.ABC):
+class BaseCheck(abc.ABC):
+    """@private"""
+
     @abc.abstractmethod
     def __str__(self):
         """

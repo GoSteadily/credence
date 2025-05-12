@@ -2,49 +2,68 @@ import copy
 from dataclasses import dataclass
 from typing import List
 
-from credence.step import Step
+from credence.interaction import Interaction
 
 
 @dataclass
-class Nested(Step):
-    conversation: "Conversation"
+class Conversation:
+    """
+    A `Conversation` is used to test a chatbot.
 
-    def __str__(self):
-        nested_conversation_str = str(self.conversation)
-        nested_conversation_str = "".join([f"  {line}" for line in nested_conversation_str.splitlines(keepends=True)])
+    It describes the expected interactions between a user
+    and the chatbot.
 
-        return f"Conversation.nested(\n{nested_conversation_str},\n)"
+    There are 3 interactions supported:
+    1. `credence.interaction.user.User` interactions are used to send messages to your chatbot as a user.
+    2. `credence.interaction.chatbot.Chatbot` interactions are used to run checks on the expected response from the chatbot.
+    3. `credence.interaction.external.External` interactions act as an escape hatch allowing you to model
+       interactions that take place outside the normal message sending flow.
 
+       This is commonly used for events that happen somewhere else,
+       such as user sign-up or payment from your website.
 
-@dataclass
-class Conversation(Step):
+    Additionally, to allow code reuse, conversations can be nested within
+    on another using `Conversation.nested(conversation)`. This is helpful if you have an involved enrolment flow
+    that would otherwise need to be repeated in each conversation.
+    """
+
     title: str
-    steps: List[Step]
+    """A unique title used to identify a conversation."""
+    interactions: List[Interaction]
+    """The sequence of interactions being tested."""
 
     @staticmethod
-    def nested(conversation: "Conversation") -> Step:
+    def nested(conversation: "Conversation") -> Interaction:
+        """
+        Create an embeddable interaction from a conversation.
+        """
         if not isinstance(conversation, Conversation):
             raise Exception("Invalid conversation")
+
+        from credence.interaction.nested import Nested
 
         return Nested(conversation=copy.deepcopy(conversation))
 
     def __str__(self):
-        steps_str = ""
-        for index, step in enumerate(self.steps):
+        """
+        Generate the code used to create an interaction
+        """
+        interactions_str = ""
+        for index, interaction in enumerate(self.interactions):
             if index != 0:
-                steps_str += ","
+                interactions_str += ","
 
-            step_str = str(step)
-            step_str = "".join([f"      {line}" for line in step_str.splitlines(keepends=True)])
-            steps_str += f"\n{step_str}"
+            interaction_str = str(interaction)
+            interaction_str = "".join([f"      {line}" for line in interaction_str.splitlines(keepends=True)])
+            interactions_str += f"\n{interaction_str}"
 
         closing_newline = ""
-        if len(self.steps) > 0:
+        if len(self.interactions) > 0:
             closing_newline = ",\n  "
 
         return f"""
 Conversation(
   title="{self.title}",
-  steps=[{steps_str}{closing_newline}],
+  interactions=[{interactions_str}{closing_newline}],
 )
 """.strip()

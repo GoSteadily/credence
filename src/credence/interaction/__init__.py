@@ -1,0 +1,4 @@
+class Interaction:
+    """"""
+
+    pass
