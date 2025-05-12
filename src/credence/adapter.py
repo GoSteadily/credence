@@ -19,21 +19,153 @@ from credence.role import Role
 from credence.test_result import TestResult
 
 logger = logging.getLogger(__name__)
+"""@private"""
 
 
 class Adapter(abc.ABC):
+    """
+    `Adapter` allows credence to interact with your chatbot
+    implementation.
+
+    It:
+    1. executes the interactions described in a conversation
+    2. evaluates the correctness of chatbot responses and collects any errors
+    3. measures the time taken by the chatbot and the test
+
+    ---
+
+    In order to create an adapter, you must:
+
+    ```python
+    # 1. Import the adapter
+    from credence.adapter import Adapter
+
+    # 2. Create a subclass of Adapter
+    class MyChatbotAdapter(Adapter):
+
+    # 3. Define the required `create_client` method
+    def create_client(self):
+        # Look at instructor's documentation for more
+        # integrations - https://python.useinstructor.com/integrations/
+
+        client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        return instructor.from_openai(client, mode=instructor.Mode.TOOLS)
+
+    # 4. Define the model you want to use to generate
+    #    user input and run AI content checks
+    def model_name(self):
+        return os.environ.get("MODEL_NAME", "gpt-4.1-mini")
+
+
+    # 5. Define the required `handle_message` method to
+    #    route messages to your chatbot
+    def handle_message(self, message: str) -> str | None:
+        # Send the message to your chatbot and return the response message.
+        # For chatbots that internally send messages, see the notes below.
+
+    # 6. (Optional) Define any methods you would want to
+    #    execute during tests
+    def register_user(self, name: str, phone_number: str):
+        # my_app.register_user(name, phone_number)
+        self.add_to_context("user", name)
+    ```
+
+    #### Context:
+
+    
+
+    #### Notes:
+    1. The `handle_message` method should return a string if user responses are dispatched
+       from outside the chatbot. If the chatbot handles message dispatching as well using
+       some `Messenger`, we recommend using `Adapter.add_chatbot_message` with one of two options:
+
+       a. **Add an `on_dispatch` callback to your messenger class**
+        ```python
+        # In your test file
+
+        from credence.adapter import Adapter
+        import pytest
+
+        class MyChatbotAdapter(Adapter):
+            def __init__(self):
+            super().__init__()
+            self.messenger = Messenger(on_dispatch=self.add_chatbot_message)
+
+            def create_client(self):
+                ...
+            def model_name(self):
+                ...
+
+            def handle_message(self, message: str) -> str | None:
+                my_app.chatbot.process_message(
+                    user=self.context["user"],
+                    messenger=self.messenger,
+                )
+        ```
+
+
+
+       b. **Monkeypatch your messenger**
+
+          More on pytest's monkeypatching - https://docs.pytest.org/en/stable/how-to/monkeypatch.html
+
+          ```python
+          # In your test file
+
+          from credence.adapter import Adapter
+          import pytest
+
+          class MyChatbotAdapter(Adapter):
+              def create_client(self):
+                  ...
+              def model_name(self):
+                  ...
+
+              def handle_message(self, message: str) -> str | None:
+                  monkeypatch = self.context["monkeypatch"]
+
+                  def mock_send_message(message: str):
+                    # Manually inform the adapter that the message was sent
+                    return self.add_chatbot_message(message)
+
+                  monkeypatch.setattr(my_app.messenger.MessengerClass, "send_message", mock_send_message)
+
+
+
+          # In your test
+          @pytest.mark.parametrize("conversation", conversations())
+          def test_maa(app, monkeypatch, conversation):
+                  adapter = (
+                      MyChatbotAdapter()
+                      # Add monkeypatch to the context so you can use it within the adapter
+                      .set_context(monkeypatch=monkeypatch)
+                      .test(conversation)
+                  )
+
+                  ...
+
+          ```
+
+    2. The `register_user` method would be executed during a `credence.conversation.Conversation`
+       using `External('register_user', {"name": "some name", "phone_number": "some_number"})`
+    """
+
     def __init__(self):
         super().__init__()
         self.context = {}
         self.queue = Queue()
+        """@private"""
         self.client = None
+        """@private"""
         self.messages = None
+        """@private"""
 
         from credence import metadata
 
         metadata.set_adapter(self)
 
     def __del__(self):
+        """Clear the metadata when destroying the adapter"""
         try:
             from credence import metadata
 
