@@ -33,7 +33,7 @@ if __name__ == "__main__":
     )
 
     # Add sitemap.xml
-    with (here / "sitemap.xml").open("w", newline="\n") as f:
+    with (here / "docs" / "sitemap.xml").open("w", newline="\n") as f:
         f.write(
             textwrap.dedent(
                 """
@@ -48,5 +48,6 @@ if __name__ == "__main__":
             if file.name.startswith("_"):
                 continue
             filename = str(file.relative_to(here).as_posix()).replace("index.html", "")
-            f.write(f"""\n<url><loc>https://github.com/GoSteadily/credence/{filename}</loc></url>""")
+            f.write(
+                f"""\n<url><loc>https://github.com/GoSteadily/credence/{filename}</loc></url>""")
         f.write("""\n</urlset>""")

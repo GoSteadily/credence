@@ -43,7 +43,7 @@ Chatbot.responds([{expectations_str}{closing_str})
 
     def _check(
         self,
-        adapter: "Adapter",
+        adapter,
         messages: List[Tuple[Role, str]],
         chatbot_response: str,
     ):

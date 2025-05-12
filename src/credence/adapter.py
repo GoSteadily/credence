@@ -10,8 +10,8 @@ from openai.types.chat import ChatCompletionMessageParam, ChatCompletionSystemMe
 
 from credence.conversation import Conversation
 from credence.interaction.chatbot import (
-    ChatbotResponds,
     ChatbotIgnoresMessage,
+    ChatbotResponds,
 )
 from credence.interaction.nested import Nested
 from credence.interaction.user import UserGenerated, UserMessage
