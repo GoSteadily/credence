@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+#
+# Usage: generate_report
+#
+
+# set -euo pipefail
+
+project="${PROJECT:?}"
+
+python docs/make.py
