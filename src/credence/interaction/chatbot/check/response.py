@@ -69,7 +69,7 @@ class ChatbotResponseAICheck(BaseCheck):
             raise Exception(f"{adapter} is not a valid Adapter")
 
         result = AIContentCheck.check_requirement(
-            client=adapter._client(),
+            client=adapter.get_client(),
             model_name=adapter.model_name(),
             messages=messages,
             requirement=self.prompt,

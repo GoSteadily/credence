@@ -72,12 +72,12 @@ class Adapter(abc.ABC):
 
     #### Context:
 
-    
+
 
     #### Notes:
     1. The `handle_message` method should return a string if user responses are dispatched
        from outside the chatbot. If the chatbot handles message dispatching as well using
-       some `Messenger`, we recommend using `Adapter.add_chatbot_message` with one of two options:
+       some `Messenger`, we recommend using `Adapter.record_chatbot_message` with one of two options:
 
        a. **Add an `on_dispatch` callback to your messenger class**
         ```python
@@ -89,7 +89,7 @@ class Adapter(abc.ABC):
         class MyChatbotAdapter(Adapter):
             def __init__(self):
             super().__init__()
-            self.messenger = Messenger(on_dispatch=self.add_chatbot_message)
+            self.messenger = Messenger(on_dispatch=self.record_chatbot_message)
 
             def create_client(self):
                 ...
@@ -126,7 +126,7 @@ class Adapter(abc.ABC):
 
                   def mock_send_message(message: str):
                     # Manually inform the adapter that the message was sent
-                    return self.add_chatbot_message(message)
+                    return self.record_chatbot_message(message)
 
                   monkeypatch.setattr(my_app.messenger.MessengerClass, "send_message", mock_send_message)
 
@@ -173,6 +173,14 @@ class Adapter(abc.ABC):
         except Exception:
             pass
 
+    def set_context(self, **kwargs: Dict[str, Any]):
+        self.context = kwargs
+        return self
+
+    def add_to_context(self, key: str, value: Any):
+        self.context[key] = value
+        return self
+
     @abc.abstractmethod
     def handle_message(self, message: str):
         """
@@ -191,8 +199,9 @@ class Adapter(abc.ABC):
         Define the name of the model to be used
         """
 
-    def _client(self) -> Instructor:
+    def get_client(self) -> Instructor:
         """
+        @private
         Create an instructor client
         """
         if self.client is None:
@@ -200,15 +209,7 @@ class Adapter(abc.ABC):
 
         return self.client
 
-    def set_context(self, **kwargs: Dict[str, Any]):
-        self.context = kwargs
-        return self
-
-    def add_to_context(self, key: str, value: Any):
-        self.context[key] = value
-        return self
-
-    def add_chatbot_message(self, chatbot_message: str):
+    def record_chatbot_message(self, chatbot_message: str):
         self.queue.put_nowait(chatbot_message)
         self.messages.append((Role.Chatbot, chatbot_message))
 
@@ -234,7 +235,8 @@ class Adapter(abc.ABC):
                     testing_time += result.testing_time_ms / 1000
                     if result.errors:
                         result.conversation = conversation
-                        result.chatbot_time_ms = round((time.time() - start_time - testing_time) * 1000)
+                        result.chatbot_time_ms = round(
+                            (time.time() - start_time - testing_time) * 1000)
                         result.testing_time_ms = round(testing_time * 1000)
                         return result
 
@@ -259,8 +261,9 @@ class Adapter(abc.ABC):
 
                     generation_start_time = time.time()
 
-                    client = self._client()
-                    text = self._generate_user_message(client=client, interaction=interaction, messages=self.messages)
+                    client = self.get_client()
+                    text = self._generate_user_message(
+                        client=client, interaction=interaction, messages=self.messages)
                     testing_time += time.time() - generation_start_time
 
                     self.messages.append((Role.User, text))
