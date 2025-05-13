@@ -87,7 +87,8 @@ Metadata("router.agent").equals(Agent.XYZ)
 uv add git+https://github.com/GoSteadily/credence --tag 0.1.8
 ```
 
-## Create an adapter
+<details>
+<summary><h3 style="display: inline;">Create an adapter</h3></summary>
 
 ```python
 # Inside your tests folder eg in chatbot_test.py
@@ -149,8 +150,12 @@ class MyChatbotAdapter(Adapter):
 >       return chatbot.handle_webhook_message(incoming_message)
 > ```
 
+</details>
 
-## Create a conversation
+<br>
+
+<details>
+<summary><h3 style="display: inline;">Create a conversation</h3></summary>
 
 ```python
 # Inside your test file
@@ -169,8 +174,12 @@ def conversations():
         )
     ]
 ```
+</details>
 
-## Test the conversation
+<br>
+
+<details>
+<summary><h3 style="display: inline;">Test the conversation</h3></summary>
 
 ```python
 # Inside your test file
@@ -190,18 +199,28 @@ def test_chatbot(conversation):
     result.to_stdout()
     assert result.errors == [], f"Found {len(result.errors)} error(s) when evaluating the test"
 ```
+</details>
 
-## Parallelizing test execution
+<br>
+
+<details>
+<summary><h3 style="display: inline;">Parallelizing test execution</h3></summary>
 
 If your chatbot uses an LLM or you are using `User.generated` or `Response.ai_check`, each test may take a few seconds. To speed up your tests, consider using [pytest-xdist](https://pytest-xdist.readthedocs.io/en/stable/) to parallelize test execution.
 
 To run parallel test use `pytest -n auto -s` from your terminal.
 
+</details>
+
+<br>
+
 ---
 
 # Usage Examples
 
-## External interactions / Escape hatches
+
+<details>
+<summary><h3 style="display: inline;">External interactions / Escape hatches</h3></summary>
 
 A conversation might depend on some external interactions.
 For example, a user may need to be registered before they can interact with the chatbot. You can use `External` interactions to run arbitrary code at any point in a conversation:
@@ -236,8 +255,12 @@ conversation = Conversation(
     )
 ```
 
+</details>
 
-## Nesting conversations
+<br>
+
+<details>
+<summary><h3 style="display: inline;">Nesting conversations</h3></summary>
 
 In some cases, your chatbot has an often repeated interaction. For example, the user must always agree to terms of service
 before using the chatbot. To avoid repeating this flow several times,
@@ -274,8 +297,13 @@ ambiguous_location_conversation = Conversation(
     ],
 )
 ```
+</details>
 
-## User Profiles: Customizing the user prompt
+<br>
+
+<details>
+<summary><h3 style="display: inline;">User Profiles: Customizing the user prompt</h3></summary>
+
 We provide a fairly simple prompt for user message generation. For more elaborate use cases, such as when supporting different user profiles, you can override the prompt using `credence.adapter.Adapter.user_simulator_system_prompt`.
 
 For example, if you were testing your chatbot's ability to escalate angry users 
@@ -297,12 +325,16 @@ class MyChatbotAdapter(Adapter):
                 return None
 
 ```
+</details>
+
+<br>
+
+---
 
 # API Documentation
 
 Complete documentation can be found at: https://gosteadily.github.io/credence/credence.html
 
----
 
 # Licensing
 
