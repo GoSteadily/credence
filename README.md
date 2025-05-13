@@ -211,8 +211,6 @@ For example, a user may need to be registered before they can interact with the 
 from credence.adapter import Adapter
 
 class MyChatbotAdapter(Adapter):
-
-    
     def handle_message(self, message: str) -> str | None:
         user: User = my_app.fetch_user(self.context["phone_number"])
         return my_app.chatbot.process_message(user, message)
