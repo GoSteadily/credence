@@ -204,7 +204,7 @@ To run parallel test use `pytest -n auto -s` from your terminal.
 ## External interactions / Escape hatches
 
 A conversation might depend on some external interactions.
-For example, a user may need to be registered before they can interact with the chatbot. You can use `External` interactions to
+For example, a user may need to be registered before they can interact with the chatbot. You can use `External` interactions to run arbitrary code at any point in a conversation:
 
 
 ```python
