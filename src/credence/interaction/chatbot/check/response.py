@@ -1,13 +1,17 @@
 import re
 from dataclasses import dataclass
 
+from credence.interaction.chatbot.check.ai_content_check import AIContentCheck
+from credence.interaction.chatbot.check.base import BaseCheck
 from credence.role import Role
-from credence.step.checks.chatbot_check import ChatbotCheck
-from credence.step.checks.requirement_check import ContentTestResult
 
 
 @dataclass
-class ChatbotResponseCheck(ChatbotCheck):
+class ChatbotResponseCheck(BaseCheck):
+    """
+    @private
+    """
+
     pass
 
 
@@ -21,9 +25,14 @@ class Response:
         return ChatbotResponseContains(string=string)
 
     @staticmethod
+    def not_contains(string: str):
+        return ChatbotResponseNotContain(string=string)
+
+    @staticmethod
     def equals(string: str):
         return ChatbotResponseEquals(string=string)
 
+    @staticmethod
     def not_equals(string: str):
         return ChatbotResponseNotEquals(string=string)
 
@@ -34,13 +43,19 @@ class Response:
             return ChatbotResponseRegexMatch(pattern=pattern)
         except Exception as e:
             try:
+                print(e)
                 raise Exception(f"Invalid regex: `{regexp}`") from e
             except Exception as e2:
+                print(e2)
                 return e2
 
 
 @dataclass
-class ChatbotResponseAICheck(ChatbotCheck):
+class ChatbotResponseAICheck(BaseCheck):
+    """
+    @private
+    """
+
     prompt: str
     # Increase the number of retries for brittle tests
     retries: int = 0
@@ -54,14 +69,17 @@ class ChatbotResponseAICheck(ChatbotCheck):
         else:
             return f"Response.ai_check(should={str_repr(self.prompt)})"
 
+    def humanize(self):
+        return f"should {self.prompt}"
+
     def find_error(self, messages, adapter):
         from credence.adapter import Adapter
 
         if not isinstance(adapter, Adapter):
             raise Exception(f"{adapter} is not a valid Adapter")
 
-        result = ContentTestResult.check_requirement(
-            client=adapter._client(),
+        result = AIContentCheck.check_requirement(
+            client=adapter.get_client(),
             model_name=adapter.model_name(),
             messages=messages,
             requirement=self.prompt,
@@ -78,10 +96,17 @@ class ChatbotResponseAICheck(ChatbotCheck):
 
 @dataclass
 class ChatbotResponseContains(ChatbotResponseCheck):
+    """
+    @private
+    """
+
     string: str
 
     def __str__(self):
         return f"Response.contains({str_repr(self.string)})"
+
+    def humanize(self):
+        return f"response should contain '{self.string}'"
 
     def find_error(self, value):
         if self.string not in value:
@@ -89,11 +114,37 @@ class ChatbotResponseContains(ChatbotResponseCheck):
 
 
 @dataclass
+class ChatbotResponseNotContain(ChatbotResponseCheck):
+    """
+    @private
+    """
+
+    string: str
+
+    def __str__(self):
+        return f'Response.not_contain("{str_repr(self.string)}")'
+
+    def humanize(self):
+        return f"response should not contain '{self.string}'"
+
+    def find_error(self, value):
+        if self.string in value:
+            return Exception(f"`Expected chatbot response to not contain `{str_repr(self.string)}`, but found `{str_repr(value)}`")
+
+
+@dataclass
 class ChatbotResponseEquals(ChatbotResponseCheck):
+    """
+    @private
+    """
+
     string: str
 
     def __str__(self):
         return f"Response.equals({str_repr(self.string)})"
+
+    def humanize(self):
+        return f"should respond with '{self.string}'"
 
     def find_error(self, value):
         if self.string != value:
@@ -102,10 +153,17 @@ class ChatbotResponseEquals(ChatbotResponseCheck):
 
 @dataclass
 class ChatbotResponseNotEquals(ChatbotResponseCheck):
+    """
+    @private
+    """
+
     string: str
 
     def __str__(self):
         return f'Response.not_equals("{str_repr(self.string)}")'
+
+    def humanize(self):
+        return f"response should not be '{self.string}'"
 
     def find_error(self, value):
         if self.string == value:
@@ -114,10 +172,17 @@ class ChatbotResponseNotEquals(ChatbotResponseCheck):
 
 @dataclass
 class ChatbotResponseRegexMatch(ChatbotResponseCheck):
+    """
+    @private
+    """
+
     pattern: re.Pattern
 
     def __str__(self):
         return f'Response.re_match("{self.pattern.pattern}")'
+
+    def humanize(self):
+        return f"should match '{self.pattern.pattern}'"
 
     def find_error(self, value):
         if re.search(self.pattern, value) is None:
@@ -125,4 +190,7 @@ class ChatbotResponseRegexMatch(ChatbotResponseCheck):
 
 
 def str_repr(string: str):
+    """
+    @private
+    """
     return f"{string.__repr__()}"

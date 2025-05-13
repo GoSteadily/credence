@@ -1,6 +1,7 @@
 import os
 import tempfile
 from pathlib import Path
+from textwrap import dedent
 from typing import List
 
 import instructor
@@ -10,11 +11,11 @@ from support.math_chatbot import MathChatbot
 
 from credence.adapter import Adapter, Role
 from credence.conversation import Conversation
-from credence.step.chatbot import Chatbot
-from credence.step.checks.metadata_check import Metadata
-from credence.step.checks.response_check import Response
-from credence.step.execute import Execute
-from credence.step.user import User
+from credence.interaction.chatbot import Chatbot
+from credence.interaction.chatbot.check.metadata import Metadata
+from credence.interaction.chatbot.check.response import Response
+from credence.interaction.external import External
+from credence.interaction.user import User
 
 
 class MathChatbotAdapter(Adapter):
@@ -34,22 +35,28 @@ class MathChatbotAdapter(Adapter):
         return instructor.from_openai(client, mode=instructor.Mode.TOOLS)
 
     def model_name(self):
-        return os.environ.get("MODEL_NAME", "gpt-4.1-nano")
+        return os.environ.get("MODEL_NAME", "gpt-4.1-mini")
+
+    def user_simulator_system_prompt(self):
+        return dedent("""
+            You are now simulating a user who is interacting with a system.
+            You can only speak in seven word sentences.
+            """).strip()
 
     def register_user(self, name: str):
-        self.add_to_context("user", name)
+        self.context["user"] = name
 
 
 def conversations():
     user_registration_flow = Conversation(
         title="we greet registered users by name",
-        steps=[
-            Execute("register_user", {"name": "John"}),
+        interactions=[
+            External("register_user", {"name": "John"}),
             User.generated("Say hello and introduce yourself as John"),
-            Chatbot.expect(
+            Chatbot.responds(
                 [
-                    Response.ai_check(should="greet the user by name", retries=2),
-                    Response.ai_check(should="introduce itself as 'credence'", retries=1),
+                    Response.ai_check(should="greet the user using his name - John", retries=2),
+                    Response.ai_check(should="introduce itself as Credence", retries=1),
                     Response.contains(string="John"),
                     Response.re_match(regexp="Hi|Hello"),
                     Metadata("chatbot.handler").equals("greeting"),
@@ -64,10 +71,10 @@ def conversations():
         user_registration_flow,
         Conversation(
             title="we answer registered user's math questions",
-            steps=[
+            interactions=[
                 Conversation.nested(user_registration_flow),
                 User.message("math:1 + 1"),
-                Chatbot.expect(
+                Chatbot.responds(
                     [
                         Response.equals("2"),
                         Metadata("chatbot.handler").equals("math"),
@@ -78,9 +85,9 @@ def conversations():
         ),
         Conversation(
             title="we greet unknown users generically",
-            steps=[
+            interactions=[
                 User.message("Hello, I'm John"),
-                Chatbot.expect(
+                Chatbot.responds(
                     [
                         Response.contains(string="there"),
                         Response.re_match(regexp="Hi|Hello"),
@@ -90,7 +97,7 @@ def conversations():
         ),
         Conversation(
             title="we ignore unknown users' math questions",
-            steps=[
+            interactions=[
                 User.message("math:1 + 1"),
                 Chatbot.ignores_mesage(),
             ],
@@ -119,11 +126,12 @@ tmpdirname = tempfile.TemporaryDirectory(delete=False)
 def test_maa(conversation):
     index, conversation = conversation
     adapter = MathChatbotAdapter()
-    # .set_context(a=1, b=2)
 
     result = adapter.test(conversation)
+    result.to_stdout()
     Path("/tmp/test_cases").mkdir(parents=True, exist_ok=True)
     with Path(f"tmp/test_cases/{index}. {conversation.title}.case.md").open("w") as f:
+        f.write(result.to_markdown(index=index))
         f.write(result.to_markdown(index=index))
 
     assert result.errors == [], f"Found {len(result.errors)} error(s) when evaluating the test"
@@ -211,16 +219,19 @@ Response.ai_check(
     assert str(Metadata("key").re_match("there")) == 'Metadata("key").re_match("there")'
     assert str(Metadata("key").one_of([1, 2, 3])) == 'Metadata("key").one_of([1, 2, 3])'
 
+    assert str(External("register_user", {"name": "John"})) == "External('register_user', {'name': 'John'})"
+    assert str(External("register_user", {})) == "External('register_user')"
+
     assert str(
         Conversation(
             title="ABC",
-            steps=[],
+            interactions=[],
         )
     ) == (
         """
 Conversation(
   title="ABC",
-  steps=[],
+  interactions=[],
 )
 """.strip()
     )
@@ -229,7 +240,7 @@ Conversation(
         Conversation.nested(
             Conversation(
                 title="ABC",
-                steps=[],
+                interactions=[],
             ),
         )
     ) == (
@@ -237,7 +248,7 @@ Conversation(
 Conversation.nested(
   Conversation(
     title="ABC",
-    steps=[],
+    interactions=[],
   ),
 )
 """.strip()
@@ -247,8 +258,8 @@ Conversation.nested(
         Conversation.nested(
             Conversation(
                 title="ABC",
-                steps=[
-                    Chatbot.expect(
+                interactions=[
+                    Chatbot.responds(
                         [
                             Response.contains("b\nc"),
                             Response.equals("ab\nc"),
@@ -264,8 +275,8 @@ Conversation.nested(
 Conversation.nested(
   Conversation(
     title="ABC",
-    steps=[
-        Chatbot.expect([
+    interactions=[
+        Chatbot.responds([
             Response.contains('b\\nc'),
             Response.equals('ab\\nc'),
             Response.ai_check(should='mention \\na'),

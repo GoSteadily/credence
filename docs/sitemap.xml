@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<url><loc>https://github.com/GoSteadily/credence/docs/</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/exceptions.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/metadata.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/test_result.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/conversation.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/adapter.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/role.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/external.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/chatbot_check.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/user.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/chatbot.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/nested.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/chatbot/check.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/chatbot_check/response.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/chatbot_check/ai_content_check.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/chatbot_check/check.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/chatbot_check/metadata.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/chatbot/check/response.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/chatbot/check/base.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/chatbot/check/ai_content_check.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/chatbot/check/check.html</loc></url>
+<url><loc>https://github.com/GoSteadily/credence/docs/credence/interaction/chatbot/check/metadata.html</loc></url>
+</urlset>

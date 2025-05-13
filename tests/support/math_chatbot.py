@@ -10,7 +10,7 @@ class MathChatbot:
             if user:
                 response = f"Hi, {user}."
 
-            return f"{response} My name is credence"
+            return f"{response} My name is Credence"
 
         elif self.is_math_question(message):
             credence.collect_metadata({"chatbot.handler": "math"})
@@ -27,7 +27,7 @@ class MathChatbot:
             return None
 
     def is_greeting(self, message):
-        return "Hi" in message or "Hello" in message
+        return "Hi" in message or "Hello" in message or "Hallo" in message
 
     def is_math_question(self, message):
         return message.startswith("math:")

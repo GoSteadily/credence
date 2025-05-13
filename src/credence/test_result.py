@@ -16,7 +16,7 @@ class TestResult:
     chatbot_time_ms: int
     testing_time_ms: int
 
-    def print(self):
+    def to_stdout(self):
         cprint("")
         cprint("------------ TestResult ------------", attrs=["bold"])
         cprint(self.conversation.title)
@@ -104,14 +104,14 @@ class TestResult:
 <details>
 <summary>
 
-### Runtime - {(self.chatbot_time_ms) / 1000}s
+### Time taken - {(self.chatbot_time_ms) / 1000}s
 
 </summary>
 
 | Total Time   | {(self.chatbot_time_ms + self.testing_time_ms) / 1000}s |
 | ------------ | ------ |
 | Chatbot Time | {self.chatbot_time_ms / 1000}s   |
-| Tester Time  |  {self.testing_time_ms / 1000}s   |
+| Testing Time  | {self.testing_time_ms / 1000}s   |
 
 </details>
 

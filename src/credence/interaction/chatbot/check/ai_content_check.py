@@ -10,17 +10,25 @@ from termcolor import colored
 from credence.exceptions import ColoredException
 from credence.role import Role
 
+"""@private"""
+
+
 logger = logging.getLogger(__name__)
+"""@private"""
 
 
-class ContentTestResult(BaseModel):
+class AIContentCheck(BaseModel):
     """
+    @private
+
     The result of analyzing a single requirement to check whether the chatbot
     response given to the user message meets the requirements.
     """
 
     requirement: str = Field(description="The requirement being checked.")
-    reason: str = Field(description="The reason why the response either meets or does not meet the requirement.")
+    reason: str = Field(
+        description="Explanation for why the response either meets or does not meet the requirement. Should explicitly state whether the requirement was met."
+    )
     requirement_met: bool = Field(description="Whether or not the response meets the requirements.")
 
     @staticmethod
@@ -32,12 +40,13 @@ class ContentTestResult(BaseModel):
         # For brittle tests, increase retries to give the LLM
         # multiple chances to mark a requirement as met
         retries: int = 0,
-    ) -> "ContentTestResult":
+    ) -> "AIContentCheck":
         request_messages: List[ChatCompletionMessageParam] = [
             ChatCompletionSystemMessageParam(
                 role="system",
                 content="""
-                    You are quality assurance system that confirms whether the answers given to a specific question meet some requirements.
+                    You are quality assurance system that confirms whether the responses given by an assistant meet a requirement.
+                    Don't be too strict with your analysis. If the response is close to meeting the requirement, then give it a pass.
                     """.strip(),
             )
         ]
@@ -64,17 +73,17 @@ class ContentTestResult(BaseModel):
                 role="user",
                 content=dedent(
                     f"""
-                    Does the assistant's final response match the following criteria:
+                    Does the assistant's response meet the following requirement:
 
-                    {requirement}
+                    The assistant should {requirement}
                     """
                 ).strip(),
             ),
         )
 
-        result: ContentTestResult = client.chat.completions.create(
+        result: AIContentCheck = client.chat.completions.create(
             model=model_name,
-            response_model=ContentTestResult,
+            response_model=AIContentCheck,
             messages=request_messages,
             # If the response is invalid, retry once
             max_retries=1,
@@ -82,9 +91,10 @@ class ContentTestResult(BaseModel):
 
         result.requirement = requirement
 
-        logger.debug(result)
+        # print("request_messages",request_messages)
+        # print(result)
         if not result.requirement_met and retries > 0:
-            return ContentTestResult.check_requirement(
+            return AIContentCheck.check_requirement(
                 client=client,
                 model_name=model_name,
                 messages=messages,
@@ -116,22 +126,26 @@ class ContentTestResult(BaseModel):
         if markdown:
             return (
                 f"chatbot response did not pass AI check:<br>\n\n"
-                f"| **requirement** | {self.requirement} |\n"
-                f"| --------------- | ------------------ |\n"
-                f"|    **response** | {chatbot_response} |\n"
-                f"|     **was met** | `False`            |\n"
-                f"|      **reason** | {self.reason}      |\n"
+                f"| **requirement** | The chatbot should {self.requirement} |\n"
+                f"| --------------- | ------------------------------------- |\n"
+                f"|    **response** | {chatbot_response}                    |\n"
+                f"|      **passed** | `False`                               |\n"
+                f"|      **reason** | {self.reason}                         |\n"
             )
         else:
             return (
                 f"chatbot response did not pass AI check:\n"
                 f"{maybe_colored(colorize, 'requirement', attrs=['bold'])}: {self.requirement}\n"
+                f"{maybe_colored(colorize, '   response', attrs=['bold'])}: {chatbot_response}\n"
+                f"{maybe_colored(colorize, '     passed', attrs=['bold'])}: False\n"
                 f"{maybe_colored(colorize, '     reason', attrs=['bold'])}: {self.reason}\n"
-                f"{maybe_colored(colorize, '   response', attrs=['bold'])}: {chatbot_response}"
             )
 
 
 def maybe_colored(colorize: bool, str, **kwargs):
+    """
+    @private
+    """
     if colorize:
         return colored(str, **kwargs)
     else:

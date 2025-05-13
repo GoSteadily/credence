@@ -1,7 +1,9 @@
 import abc
 
 
-class ChatbotCheck(abc.ABC):
+class BaseCheck(abc.ABC):
+    """@private"""
+
     @abc.abstractmethod
     def __str__(self):
         """
@@ -18,6 +20,10 @@ class ChatbotCheck(abc.ABC):
     @abc.abstractmethod
     def find_error(self, value, **kwargs):
         """ """
+
+    @abc.abstractmethod
+    def humanize(self) -> str:
+        "Generate a sentence that describes the check"
 
     def check(self, value, **kwargs):
         exception = self.find_error(value, **kwargs)

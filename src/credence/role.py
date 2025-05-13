@@ -3,10 +3,15 @@ from enum import Enum
 
 from openai.types.chat import ChatCompletionAssistantMessageParam, ChatCompletionUserMessageParam
 
+"""@private"""
+
 logger = logging.getLogger(__name__)
+"""@private"""
 
 
 class Role(str, Enum):
+    """@private"""
+
     Chatbot = "assistant"
     User = "user"
 

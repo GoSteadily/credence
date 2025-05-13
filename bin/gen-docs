@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+#
+# Usage: gen-docs
+#
+
+# set -euo pipefail
+
+project="${PROJECT:?}"
+
+rm -rf "$project/docs/docs"
+python docs/make.py
