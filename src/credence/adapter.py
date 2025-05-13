@@ -246,6 +246,9 @@ class Adapter(abc.ABC):
 
         ```python
         def create_client(self):
+            # Look at instructor's documentation for more
+            # integrations - https://python.useinstructor.com/integrations/
+
 
             client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
             return instructor.from_openai(client, mode=instructor.Mode.TOOLS)
