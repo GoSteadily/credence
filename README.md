@@ -223,10 +223,11 @@ class MyChatbotAdapter(Adapter):
         user: User = my_app.register_user(name, phone_number)
         my_app.upgrade_user(user)
 
-# Use the register_and_upgrade function in a conversation
+# Somewhere else ...
 conversation = Conversation(
         title: "Paid users have access to premium flow",
         interactions: [
+            # Use the register_and_upgrade function in a conversation
             External("register_and_upgrade", {
                 "user": "John",
                 "phone_number": "+12345678901",
