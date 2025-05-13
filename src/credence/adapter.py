@@ -381,7 +381,7 @@ class Adapter(abc.ABC):
             raise Exception("Expected a chatbot message but none had been sent")
 
     @_docstring_parameter(default_user_simulator_system_prompt)
-    def user_simulator_system_prompt(self):
+    def user_simulator_system_prompt(self) -> str | None:
         """
         By default, credence uses a simple systen prompt to generate user messages:
 
@@ -402,7 +402,7 @@ class Adapter(abc.ABC):
     ):
         llm_messages: List[ChatCompletionMessageParam] = []
 
-        prompt = self.user_simulator_system_prompt()
+        prompt = self.user_simulator_system_prompt() or default_user_simulator_system_prompt
         if messages:
             context = "\nContext:"
             for role, message in messages:

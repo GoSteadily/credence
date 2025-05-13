@@ -25,9 +25,14 @@ class Response:
         return ChatbotResponseContains(string=string)
 
     @staticmethod
+    def not_contains(string: str):
+        return ChatbotResponseNotContain(string=string)
+
+    @staticmethod
     def equals(string: str):
         return ChatbotResponseEquals(string=string)
 
+    @staticmethod
     def not_equals(string: str):
         return ChatbotResponseNotEquals(string=string)
 
@@ -38,8 +43,10 @@ class Response:
             return ChatbotResponseRegexMatch(pattern=pattern)
         except Exception as e:
             try:
+                print(e)
                 raise Exception(f"Invalid regex: `{regexp}`") from e
             except Exception as e2:
+                print(e2)
                 return e2
 
 
@@ -61,6 +68,9 @@ class ChatbotResponseAICheck(BaseCheck):
 )""".strip()
         else:
             return f"Response.ai_check(should={str_repr(self.prompt)})"
+
+    def humanize(self):
+        return f"should {self.prompt}"
 
     def find_error(self, messages, adapter):
         from credence.adapter import Adapter
@@ -95,9 +105,31 @@ class ChatbotResponseContains(ChatbotResponseCheck):
     def __str__(self):
         return f"Response.contains({str_repr(self.string)})"
 
+    def humanize(self):
+        return f"response should contain '{self.string}'"
+
     def find_error(self, value):
         if self.string not in value:
             return Exception(f"`Expected chatbot response to contain `{str_repr(self.string)}`, but found `{str_repr(value)}`")
+
+
+@dataclass
+class ChatbotResponseNotContain(ChatbotResponseCheck):
+    """
+    @private
+    """
+
+    string: str
+
+    def __str__(self):
+        return f'Response.not_contain("{str_repr(self.string)}")'
+
+    def humanize(self):
+        return f"response should not contain '{self.string}'"
+
+    def find_error(self, value):
+        if self.string in value:
+            return Exception(f"`Expected chatbot response to not contain `{str_repr(self.string)}`, but found `{str_repr(value)}`")
 
 
 @dataclass
@@ -110,6 +142,9 @@ class ChatbotResponseEquals(ChatbotResponseCheck):
 
     def __str__(self):
         return f"Response.equals({str_repr(self.string)})"
+
+    def humanize(self):
+        return f"should respond with '{self.string}'"
 
     def find_error(self, value):
         if self.string != value:
@@ -127,6 +162,9 @@ class ChatbotResponseNotEquals(ChatbotResponseCheck):
     def __str__(self):
         return f'Response.not_equals("{str_repr(self.string)}")'
 
+    def humanize(self):
+        return f"response should not be '{self.string}'"
+
     def find_error(self, value):
         if self.string == value:
             return Exception(f"Expected chatbot response to not equal `{self.string}`, but found `{str_repr(value)}`")
@@ -142,6 +180,9 @@ class ChatbotResponseRegexMatch(ChatbotResponseCheck):
 
     def __str__(self):
         return f'Response.re_match("{self.pattern.pattern}")'
+
+    def humanize(self):
+        return f"should match '{self.pattern.pattern}'"
 
     def find_error(self, value):
         if re.search(self.pattern, value) is None:

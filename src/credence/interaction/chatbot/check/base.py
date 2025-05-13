@@ -21,6 +21,10 @@ class BaseCheck(abc.ABC):
     def find_error(self, value, **kwargs):
         """ """
 
+    @abc.abstractmethod
+    def humanize(self) -> str:
+        "Generate a sentence that describes the check"
+
     def check(self, value, **kwargs):
         exception = self.find_error(value, **kwargs)
         if exception:

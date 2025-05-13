@@ -114,6 +114,9 @@ class ChatbotMetadataEquals(ChatbotMetadataCheck):
     def __str__(self):
         return f'Metadata("{self.key}").equals("{self.string}")'
 
+    def humanize(self):
+        return f"metadata `{self.key}` should be '{self.string}'"
+
     def find_error(self, value):
         if str(value) != self.string:
             return Exception(f"Expected metadata[`{self.key}`] to equal `{self.string}`, but found: `{value}`")
@@ -129,6 +132,9 @@ class ChatbotMetadataNotEquals(ChatbotMetadataCheck):
 
     def __str__(self):
         return f'Metadata("{self.key}").not_equals("{self.string}")'
+
+    def humanize(self):
+        return f"metadata `{self.key}` should not be '{self.string}'"
 
     def find_error(self, value):
         if str(value) == self.string:
@@ -146,6 +152,9 @@ class ChatbotMetadataContains(ChatbotMetadataCheck):
     def __str__(self):
         return f'Metadata("{self.key}").contains("{self.string}")'
 
+    def humanize(self):
+        return f"metadata `{self.key}` should contain '{self.string}'"
+
     def find_error(self, value):
         if self.string not in str(value):
             return Exception(f"Expected metadata[`{self.key}`] to contain `{self.string}`, but found: `{value}`")
@@ -161,6 +170,9 @@ class ChatbotMetadataRegexMatch(ChatbotMetadataCheck):
 
     def __str__(self):
         return f'Metadata("{self.key}").re_match("{self.pattern.pattern}")'
+
+    def humanize(self):
+        return f"metadata `{self.key}` should match `{self.pattern.pattern}`"
 
     def find_error(self, value):
         if re.search(self.pattern, str(value)) is None:
@@ -178,6 +190,9 @@ class ChatbotMetadataOneOf(ChatbotMetadataCheck):
 
     def __str__(self):
         return f'Metadata("{self.key}").one_of({self.values})'
+
+    def humanize(self):
+        return f"metadata `{self.key}` should be one of `{self.values}`"
 
     def find_error(self, value):
         if str(value) not in self.str_values:
