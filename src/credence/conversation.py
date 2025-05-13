@@ -14,10 +14,10 @@ class Conversation:
     and the chatbot.
 
     There are 3 interactions supported:
-    1. `credence.interaction.user.User` interactions are used to send messages to your chatbot as a user.
-    2. `credence.interaction.chatbot.Chatbot` interactions are used to run checks on the expected response from the chatbot.
-    3. `credence.interaction.external.External` interactions act as an escape hatch allowing you to model
-       interactions that take place outside the normal message sending flow.
+    1. User interactions are used to send messages to your chatbot as a user (`credence.interaction.user.User`).
+    2. Chatbot interactions are used to run checks on the expected response from the chatbot (`credence.interaction.chatbot.Chatbot`).
+    3. External interactions act as an escape hatch allowing you to model
+       interactions that take place outside the normal message sending flow (`credence.interaction.external.External`).
 
        This is commonly used for events that happen somewhere else,
        such as user sign-up or payment from your website.
@@ -35,14 +35,16 @@ class Conversation:
     @staticmethod
     def nested(conversation: "Conversation") -> Interaction:
         """
-        Create an embeddable interaction from a conversation.
+        Reuse a conversation inside another conversation.
+
+        See: `credence.interaction.nested_conversation.NestedConversation`
         """
         if not isinstance(conversation, Conversation):
             raise Exception("Invalid conversation")
 
-        from credence.interaction.nested import Nested
+        from credence.interaction.nested_conversation import NestedConversation
 
-        return Nested(conversation=copy.deepcopy(conversation))
+        return NestedConversation(conversation=copy.deepcopy(conversation))
 
     def __str__(self):
         """

@@ -45,7 +45,8 @@ class AIContentCheck(BaseModel):
             ChatCompletionSystemMessageParam(
                 role="system",
                 content="""
-                    You are quality assurance system that confirms whether the answers given to a specific question meet some requirements.
+                    You are quality assurance system that confirms whether the responses given by an assistant meet a requirement.
+                    Don't be too strict with your analysis. If the response is close to meeting the requirement, then give it a pass.
                     """.strip(),
             )
         ]
@@ -72,7 +73,7 @@ class AIContentCheck(BaseModel):
                 role="user",
                 content=dedent(
                     f"""
-                    Does the assistant's final response match the following criteria:
+                    Does the assistant's response meet the following requirement:
 
                     The assistant should {requirement}
                     """

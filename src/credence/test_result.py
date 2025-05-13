@@ -16,7 +16,7 @@ class TestResult:
     chatbot_time_ms: int
     testing_time_ms: int
 
-    def print(self):
+    def to_stdout(self):
         cprint("")
         cprint("------------ TestResult ------------", attrs=["bold"])
         cprint(self.conversation.title)

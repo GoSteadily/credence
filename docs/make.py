@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import shutil
 import textwrap
 
-from jinja2 import Environment
-from jinja2 import FileSystemLoader
-from markupsafe import Markup
-import pygments.formatters.html
-import pygments.lexers.python
 
 import pdoc.render
 
@@ -28,6 +22,8 @@ if __name__ == "__main__":
     )
     pdoc.pdoc(
         credence,
+        "!credence.exception",
+        "!credence.metadata",
         "!credence.role",
         output_directory=here / "docs",
     )

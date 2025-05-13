@@ -21,7 +21,7 @@ jobs:
       - name: Generate report
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: devbox run generate_report
+        run: devbox run gen-report
 
       - uses: actions/upload-artifact@v4
         with:

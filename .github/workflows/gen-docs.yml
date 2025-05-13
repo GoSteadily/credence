@@ -31,7 +31,7 @@ jobs:
           enable-cache: "true"
 
       - name: Generate docs
-        run: devbox run generate-docs
+        run: devbox run gen-docs
 
       - uses: actions/upload-pages-artifact@v3
         with:

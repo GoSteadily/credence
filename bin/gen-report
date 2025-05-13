@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# Usage: generate_report
+# Usage: gen-report
 #
 
 # set -euo pipefail

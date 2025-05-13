@@ -3,7 +3,10 @@ from typing import Dict
 from credence.adapter import Adapter
 
 active_adapter: Adapter | None = None
-cache: Dict[str, str] = {}
+"""@private"""
+
+metadata: Dict[str, str] = {}
+"""@private"""
 
 
 def set_adapter(adapter: Adapter | None):
@@ -17,18 +20,18 @@ def clear_adapter():
 
 
 def clear():
-    global cache
-    cache = {}
+    global metadata
+    metadata = {}
 
 
 def get_value(key: str):
     try:
-        global cache
-        return cache[key]
+        global metadata
+        return metadata[key]
     except KeyError as e:
-        raise Exception(f"Could not find {key} in metadata. Available keys are: {list(cache.keys())}") from e
+        raise Exception(f"Could not find {key} in metadata. Available keys are: {list(metadata.keys())}") from e
 
 
 def set_value(key: str, value: str):
-    global cache
-    cache[key] = value
+    global metadata
+    metadata[key] = value
