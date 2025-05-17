@@ -80,13 +80,11 @@ class TestResult:
         for message_, interaction in zip(self.messages, interactions, strict=False):
             index, role, message = message_
 
-
             if role == Role.User:
                 name = "user"
                 md += f"| `{name}` | **{message.replace('\n', '<br>')}** | |\n"
             if role == Role.Chatbot:
                 name = "asst"
-
 
                 requirements = []
                 if isinstance(interaction, ChatbotResponds):
