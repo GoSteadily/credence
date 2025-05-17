@@ -67,7 +67,27 @@ def conversations():
         ],
     )
 
+    failing_test = Conversation(
+        title="Failing test",
+        interactions=[
+            External("register_user", {"name": "John"}),
+            User.generated("Say hello and introduce yourself as John"),
+            Chatbot.responds(
+                [
+                    Response.ai_check(should="offer the user a discount"),
+                    Response.contains(string="Steve"),
+                    Response.re_match(regexp="Random"),
+                    Metadata("chatbot.handler").equals("greeting"),
+                    Metadata("chatbot.handler").equals("gree"),
+                    Metadata("chatbot.handler").contains("fail"),
+                    Metadata("chatbot.handler").re_match("fail{2}"),
+                ]
+            ),
+        ],
+    )
+
     return [
+        failing_test,
         user_registration_flow,
         Conversation(
             title="we answer registered user's math questions",
@@ -131,7 +151,6 @@ def test_maa(conversation):
     result.to_stdout()
     Path("/tmp/test_cases").mkdir(parents=True, exist_ok=True)
     with Path(f"tmp/test_cases/{index}. {conversation.title}.case.md").open("w") as f:
-        f.write(result.to_markdown(index=index))
         f.write(result.to_markdown(index=index))
 
     assert result.errors == [], f"Found {len(result.errors)} error(s) when evaluating the test"

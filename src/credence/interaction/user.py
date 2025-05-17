@@ -9,6 +9,12 @@ class UserMessage(Interaction):
 
     text: str
 
+    def is_user_interaction(self) -> bool:
+        return True
+
+    def is_chatbot_interaction(self) -> bool:
+        return False
+
 
 @dataclass
 class UserGenerated(Interaction):
@@ -16,8 +22,14 @@ class UserGenerated(Interaction):
 
     prompt: str
 
+    def is_user_interaction(self) -> bool:
+        return True
 
-class User(Interaction):
+    def is_chatbot_interaction(self) -> bool:
+        return False
+
+
+class User:
     """
     `User` interactions allow us to simulate a user sending messages
     to the chatbot.

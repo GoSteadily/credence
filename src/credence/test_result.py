@@ -5,12 +5,14 @@ from termcolor import cprint
 
 from credence.conversation import Conversation
 from credence.exceptions import ColoredException
+from credence.interaction.chatbot import ChatbotResponds
+from credence.interaction.nested_conversation import NestedConversation
 from credence.role import Role
 
 
 @dataclass
 class TestResult:
-    messages: List[Tuple[Role, str]]
+    messages: List[Tuple[int, Role, str]]
     errors: List[Any]
     conversation: Conversation
     chatbot_time_ms: int
@@ -26,7 +28,7 @@ class TestResult:
         cprint(f"Chatbot Time:  {self.chatbot_time_ms / 1000}s")
         cprint("------------------------------------\n", attrs=["bold"])
 
-        for role, message in self.messages:
+        for _index, role, message in self.messages:
             if role == Role.User:
                 color = "blue"
                 name = "user: "
@@ -68,16 +70,39 @@ class TestResult:
 ### Conversation
 
 """
-        md += "|||\n"
-        md += "|---|---|\n"
+        md += "|Role| Message |Checks|\n"
+        md += "|----|---------|------|\n"
 
-        for role, message in self.messages:
+        interactions = self._get_internal_interactions()
+
+        # TODO: Replace this zipping with another approach
+        # Right now, we assume that
+        for message_, interaction in zip(self.messages, interactions, strict=False):
+            index, role, message = message_
+
+
             if role == Role.User:
                 name = "user"
-                md += f"| `{name}` | **{message.replace('\n', '<br>')}** |\n"
+                md += f"| `{name}` | **{message.replace('\n', '<br>')}** | |\n"
             if role == Role.Chatbot:
                 name = "asst"
-                md += f"| `{name}` | {message.replace('\n', '<br>')} |\n"
+
+
+                requirements = []
+                if isinstance(interaction, ChatbotResponds):
+                    for expectation in interaction.expectations:
+                        prefix = "`✅`" if expectation.passed else "`❌`"
+                        requirements.append(f"{prefix} {expectation.humanize()}")
+
+                if requirements:
+                    for index, requirement in enumerate(requirements):
+                        if index == 0:
+                            md += f"| `{name}` | {message.replace('\n', '<br>')} | {requirement} |\n"
+                        else:
+                            md += f"|          |                                 | {requirement} |\n"
+
+                else:
+                    md += f"| `{name}` | {message.replace('\n', '<br>')} | {requirements} |\n"
 
             # md += f"`{name}`\n\n"
             # md += f"> {message.replace('\n', '<br>')}\n\n"
@@ -133,3 +158,21 @@ class TestResult:
 """
         md += "\n</details>\n\n---\n\n"
         return md
+
+    def _get_internal_interactions(self):
+        return self._do_get_internal_interactions(interactions=[], conversation=self.conversation)
+
+    def _do_get_internal_interactions(self, interactions, conversation: Conversation):
+        for interaction in conversation.interactions:
+            if isinstance(interaction, NestedConversation):
+                self._do_get_internal_interactions(
+                    conversation=interaction.conversation,
+                    interactions=interactions,
+                )
+            if interaction.is_user_interaction():
+                interactions.append(interaction)
+
+            if interaction.is_chatbot_interaction():
+                interactions.append(interaction)
+
+        return interactions

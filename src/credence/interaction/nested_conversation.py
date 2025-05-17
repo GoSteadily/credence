@@ -58,3 +58,9 @@ class NestedConversation(Interaction):
         nested_conversation_str = "".join([f"  {line}" for line in nested_conversation_str.splitlines(keepends=True)])
 
         return f"Conversation.nested(\n{nested_conversation_str},\n)"
+
+    def is_user_interaction(self) -> bool:
+        return False
+
+    def is_chatbot_interaction(self) -> bool:
+        return False

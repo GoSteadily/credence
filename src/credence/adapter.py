@@ -107,9 +107,9 @@ class Adapter(abc.ABC):
         )
         ```
 
-        If your chatbot requires some `User` instance when processing a 
+        If your chatbot requires some `User` instance when processing a
         message, you can store the registered user's phone number in the adapter's context
-        during registration. Later, in `handle_message`, you could that phone number to load 
+        during registration. Later, in `handle_message`, you could that phone number to load
         the user from the database:
 
         ```python
@@ -137,13 +137,16 @@ class Adapter(abc.ABC):
         ```
         """
 
-        self.queue = Queue()
+        self.queue: Queue[Tuple[int, str]] = Queue()
         """@private"""
 
         self.client: Instructor | None = None
         """@private"""
 
-        self.messages: List[Tuple[Role, str]] | None = None
+        self.messages: List[Tuple[int, Role, str]] = []
+        """@private"""
+
+        self.next_message_index: int = 0
         """@private"""
 
         from credence import metadata
@@ -275,10 +278,16 @@ class Adapter(abc.ABC):
         Manually inform the adapter of a chatbot response message.
         See `handle_message` for more details.
         """
-        self.queue.put_nowait(chatbot_message)
-        self.messages.append((Role.Chatbot, chatbot_message))
+        self._add_message(Role.Chatbot, chatbot_message)
 
         return self
+
+    def _add_message(self, role: Role, message: str):
+        self.messages.append((self.next_message_index, role, message))
+        if role == Role.Chatbot:
+            self.queue.put_nowait((self.next_message_index, message))
+
+        self.next_message_index += 1
 
     def test(self, conversation: Conversation) -> TestResult:
         """
@@ -289,9 +298,6 @@ class Adapter(abc.ABC):
 
         start_time = time.time()
         testing_time = 0.0
-
-        if self.messages is None:
-            self.messages = []
 
         try:
             for interaction in conversation.interactions:
@@ -309,7 +315,7 @@ class Adapter(abc.ABC):
 
                 elif isinstance(interaction, UserMessage):
                     self._assert_no_chatbot_messages()
-                    self.messages.append((Role.User, interaction.text))
+                    self._add_message(Role.User, interaction.text)
 
                     from credence import metadata
 
@@ -317,8 +323,7 @@ class Adapter(abc.ABC):
                     chatbot_response = self.handle_message(interaction.text)
 
                     if chatbot_response:
-                        self.queue.put_nowait(chatbot_response)
-                        self.messages.append((Role.Chatbot, chatbot_response))
+                        self._add_message(Role.Chatbot, chatbot_response)
 
                 elif isinstance(interaction, UserGenerated):
                     self._assert_no_chatbot_messages()
@@ -329,22 +334,31 @@ class Adapter(abc.ABC):
                     text = self._generate_user_message(client=client, interaction=interaction, messages=self.messages)
                     testing_time += time.time() - generation_start_time
 
-                    self.messages.append((Role.User, text))
+                    self._add_message(Role.User, text)
 
                     chatbot_response = self.handle_message(text)
                     if chatbot_response:
-                        self.queue.put_nowait(chatbot_response)
-                        self.messages.append((Role.Chatbot, chatbot_response))
+                        self._add_message(Role.Chatbot, chatbot_response)
 
                 elif isinstance(interaction, ChatbotResponds):
                     generation_start_time = time.time()
 
                     chatbot_response = self._get_queued_chatbot_message()
-                    interaction._check(
+                    exceptions = interaction._check(
                         adapter=self,
                         messages=self.messages,
                         chatbot_response=chatbot_response,
                     )
+
+                    if exceptions:
+                        return TestResult(
+                            conversation=conversation,
+                            messages=self.messages,
+                            errors=exceptions,
+                            testing_time_ms=round(testing_time * 1000),
+                            chatbot_time_ms=round((time.time() - start_time - testing_time) * 1000),
+                        )
+
                     testing_time += time.time() - generation_start_time
                 elif isinstance(interaction, ChatbotIgnoresMessage):
                     self._assert_no_chatbot_messages()
@@ -377,8 +391,8 @@ class Adapter(abc.ABC):
     def _get_queued_chatbot_message(self):
         try:
             return self.queue.get_nowait()
-        except Empty as e:
-            raise Exception("Expected a chatbot message but none had been sent")
+        except Empty:
+            raise Exception("Expected a chatbot message but none had been sent") from None
 
     @_docstring_parameter(default_user_simulator_system_prompt)
     def user_simulator_system_prompt(self) -> str | None:
@@ -398,14 +412,14 @@ class Adapter(abc.ABC):
         self,
         client: Instructor,
         interaction: UserGenerated,
-        messages: List[Tuple[Role, str]],
+        messages: List[Tuple[int, Role, str]],
     ):
         llm_messages: List[ChatCompletionMessageParam] = []
 
         prompt = self.user_simulator_system_prompt() or default_user_simulator_system_prompt
         if messages:
             context = "\nContext:"
-            for role, message in messages:
+            for _, role, message in messages:
                 context += f"{str(role)}: {message}\n"
 
             prompt += context

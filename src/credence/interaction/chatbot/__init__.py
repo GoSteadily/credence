@@ -8,7 +8,7 @@ from credence.interaction.chatbot.check.response import ChatbotResponseAICheck, 
 from credence.role import Role
 
 
-class Chatbot(Interaction):
+class Chatbot:
     @staticmethod
     def responds(expectations: List[BaseCheck]) -> Interaction:
         return ChatbotResponds(expectations=expectations)
@@ -44,23 +44,37 @@ Chatbot.responds([{expectations_str}{closing_str})
     def _check(
         self,
         adapter,
-        messages: List[Tuple[Role, str]],
-        chatbot_response: str,
-    ):
+        messages: List[Tuple[int, Role, str]],
+        chatbot_response: Tuple[int, str],
+    ) -> List[Exception]:
         from credence import metadata
 
+        exceptions = []
         for expectation in self.expectations:
             if isinstance(expectation, ChatbotResponseAICheck):
-                expectation.check(value=messages, adapter=adapter)
+                exceptions.extend(
+                    expectation.check(value=messages, adapter=adapter),
+                )
 
             elif isinstance(expectation, ChatbotResponseCheck):
-                expectation.check(value=chatbot_response)
+                exceptions.extend(
+                    expectation.check(value=chatbot_response),
+                )
 
             elif isinstance(expectation, ChatbotMetadataCheck):
                 value = metadata.get_value(expectation.key)
-                expectation.check(value)
+                exceptions.extend(
+                    expectation.check(value),
+                )
 
         metadata.clear()
+        return exceptions
+
+    def is_user_interaction(self) -> bool:
+        return False
+
+    def is_chatbot_interaction(self) -> bool:
+        return True
 
 
 @dataclass
@@ -69,3 +83,9 @@ class ChatbotIgnoresMessage(Interaction):
 
     def __str__(self):
         return "Chatbot.ignores_mesage()"
+
+    def is_user_interaction(self) -> bool:
+        return False
+
+    def is_chatbot_interaction(self) -> bool:
+        return False

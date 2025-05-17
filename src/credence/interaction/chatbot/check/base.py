@@ -1,7 +1,12 @@
 import abc
+from dataclasses import dataclass
 
 
+@dataclass(kw_only=True)
 class BaseCheck(abc.ABC):
+    """@private"""
+
+    passed: bool = True
     """@private"""
 
     @abc.abstractmethod
@@ -26,6 +31,10 @@ class BaseCheck(abc.ABC):
         "Generate a sentence that describes the check"
 
     def check(self, value, **kwargs):
+        self.passed = True
         exception = self.find_error(value, **kwargs)
         if exception:
-            raise exception
+            self.passed = False
+            return [exception]
+        else:
+            return []

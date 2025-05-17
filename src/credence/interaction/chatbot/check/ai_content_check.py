@@ -1,6 +1,6 @@
 import logging
 from textwrap import dedent
-from typing import Any, List, Tuple
+from typing import List, Tuple
 
 import instructor
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam
@@ -35,7 +35,7 @@ class AIContentCheck(BaseModel):
     def check_requirement(
         client: instructor.Instructor,
         model_name: str,
-        messages: List[Tuple[Any, str]],
+        messages: List[Tuple[int, Role, str]],
         requirement: str,
         # For brittle tests, increase retries to give the LLM
         # multiple chances to mark a requirement as met
@@ -53,7 +53,7 @@ class AIContentCheck(BaseModel):
 
         if messages:
             chat_log = ""
-            for _role, message in messages:
+            for _, _role, message in messages:
                 role: Role = _role
                 chat_log = chat_log + f"{role.value}: {message}\n"
 
@@ -104,19 +104,20 @@ class AIContentCheck(BaseModel):
 
         return result
 
-    def generate_error(self, chatbot_response: str):
+    def generate_error(self, chatbot_response: tuple[int, str]):
         if not self.requirement_met:
             return ColoredException(
+                chatbot_response[0],
                 self._exception_message(
-                    chatbot_response=chatbot_response,
+                    chatbot_response=chatbot_response[1],
                     colorize=False,
                 ),
                 self._exception_message(
-                    chatbot_response=chatbot_response,
+                    chatbot_response=chatbot_response[1],
                     colorize=True,
                 ),
                 self._exception_message(
-                    chatbot_response=chatbot_response,
+                    chatbot_response=chatbot_response[1],
                     colorize=False,
                     markdown=True,
                 ),

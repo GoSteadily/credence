@@ -42,3 +42,9 @@ class External(Interaction):
 
         else:
             return f"External({name})"
+
+    def is_user_interaction(self) -> bool:
+        return False
+
+    def is_chatbot_interaction(self) -> bool:
+        return False
