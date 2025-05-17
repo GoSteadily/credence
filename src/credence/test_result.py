@@ -90,7 +90,7 @@ class TestResult:
                 if isinstance(interaction, ChatbotResponds):
                     for expectation in interaction.expectations:
                         prefix = "`✅`" if expectation.passed else "`❌`"
-                        requirements.append(f"{prefix} {expectation.humanize()}")
+                        requirements.append(f"{prefix} {expectation.humanize()}".replace('\n', '<br>'))
 
                 if requirements:
                     for index, requirement in enumerate(requirements):
