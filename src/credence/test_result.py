@@ -95,7 +95,7 @@ class TestResult:
                 if requirements:
                     for index, requirement in enumerate(requirements):
                         if index == 0:
-                            md += f"| `{name}` | {message.replace('\n', '<br>')} | {requirement} |\n"
+                            md += f"| `{name.replace('\n', '<br>')}` | {message.replace('\n', '<br>')} | {requirement} |\n"
                         else:
                             md += f"|          |                                 | {requirement} |\n"
 
