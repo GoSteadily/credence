@@ -98,20 +98,19 @@ class TestResult:
                 body = message.body.replace('\n', '<br>')
 
                 if requirements or message.metadata:
-                    for requirement_pair, metadata_pair in itertools.zip_longest(enumerate(requirements), message.metadata.items()):
-                        metadata = ""
+                    for index, (requirement, metadata_pair) in enumerate(itertools.zip_longest(requirements, message.metadata.items())):
+                        metadata_str = ""
                         if metadata_pair:
-                            metadata = f"`{metadata_pair[0]}`: {metadata_pair[1].replace('\n', '<br>')}"
+                            metadata_str = f"`{metadata_pair[0]}`: {metadata_pair[1].replace('\n', '<br>')}"
 
-                        requirement = ""
-                        if requirement_pair:
-                            (_, requirement) = requirement_pair
-                            requirement = f"{requirement.replace('\n', '<br>')}"
+                        requirement_str = ""
+                        if requirement:
+                            requirement_str = f"{requirement.replace('\n', '<br>')}"
 
                         if index == 0:
-                            md += f"| `{name_}` | {body} | {requirement} | {metadata} |\n"
+                            md += f"| `{name_}` | {body} | {requirement_str} | {metadata_str} |\n"
                         else:
-                            md += f"|           |        | {requirement} | {metadata} |\n"
+                            md += f"|           |        | {requirement_str} | {metadata_str} |\n"
 
                 else:
                     md += f"| `{name_}` | {body} | — | — |\n"
