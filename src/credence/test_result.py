@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import itertools
+from dataclasses import dataclass
 from typing import Any, List
 
 from termcolor import cprint
@@ -25,8 +25,7 @@ class TestResult:
         cprint("------------ TestResult ------------", attrs=["bold"])
         cprint(self.conversation.title)
         cprint("------------------------------------")
-        cprint(
-            f"  Total Time:  {(self.chatbot_time_ms + self.testing_time_ms) / 1000}s")
+        cprint(f"  Total Time:  {(self.chatbot_time_ms + self.testing_time_ms) / 1000}s")
         cprint(f"   Test Time:  {self.testing_time_ms / 1000}s")
         cprint(f"Chatbot Time:  {self.chatbot_time_ms / 1000}s")
         cprint("------------------------------------\n", attrs=["bold"])
@@ -91,11 +90,10 @@ class TestResult:
                 if isinstance(interaction, ChatbotResponds):
                     for expectation in interaction.expectations:
                         prefix = "`✅`" if expectation.passed else "`❌`"
-                        requirements.append(
-                            f"{prefix} {expectation.humanize()}".replace("\n", "<br>"))
+                        requirements.append(f"{prefix} {expectation.humanize()}".replace("\n", "<br>"))
 
-                name_ = name.replace('\n', '<br>')
-                body = message.body.replace('\n', '<br>')
+                name_ = name.replace("\n", "<br>")
+                body = message.body.replace("\n", "<br>")
 
                 if requirements or message.metadata:
                     for index, (requirement, metadata_pair) in enumerate(itertools.zip_longest(requirements, message.metadata.items())):

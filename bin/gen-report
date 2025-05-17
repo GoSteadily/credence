@@ -6,19 +6,29 @@
 
 # set -euo pipefail
 
-project="${PROJECT:?}"
 output="tmp/test_cases/$(date -u '+%Y-%m-%d_%H-%M-%SZ')-$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse --short=8 HEAD).md"
 
 mkdir -p tmp/test_cases
 rm -f tmp/test_cases/*.case.md
 
-printf "|   | Details |\n" > $output
-printf "|---|---|\n" >> $output
-printf "| Branch | $(git rev-parse --abbrev-ref HEAD) |\n" >> $output
-printf "| Commit | $(git rev-parse --short=8 HEAD) |\n" >> $output
-printf "| Timestamp | $(date -u '+%Y-%m-%d %H:%M:%SZ') UTC |\n" >> $output
-printf "\n" >> $output
+
+{
+    printf "|           | Details |\n";
+    printf "|-----------|---------|\n";
+    printf "| Branch    | %s      |\n" "$(git rev-parse --abbrev-ref HEAD)";
+    printf "| Commit    | %s      |\n" "$(git rev-parse --short=8 HEAD)";
+    printf "| Timestamp | %s UTC  |\n" "$(date -u '+%Y-%m-%d %H:%M:%SZ')";
+} > "$output"
+
 pytest -s -o log_cli=true -k test_maa 
 
-cat tmp/test_cases/*.case.md >> $output
+passing_tests=(tmp/test_cases/*.p.case.md)
+num_passing=${#passing_tests[@]}
+
+test_cases=(tmp/test_cases/*.case.md)
+num_cases=${#test_cases[@]}
+
+printf "| Success Rate | %s / %s |\n\n"  "$num_passing" "$num_cases" >> "$output"
+
+cat tmp/test_cases/*.case.md >> "$output"
 rm -f tmp/test_cases/*.case.md

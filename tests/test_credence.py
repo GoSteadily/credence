@@ -142,6 +142,14 @@ def require_unique(conversations: List[Conversation]):
 tmpdirname = tempfile.TemporaryDirectory(delete=False)
 
 
+conversation_count = len(conversations())
+
+
+def index_str(index):
+    chars = len(str(conversation_count))
+    return str(index).rjust(chars, "0")
+
+
 @pytest.mark.parametrize("conversation", enumerate(require_unique(conversations()), 1))
 def test_maa(conversation):
     index, conversation = conversation
@@ -150,7 +158,9 @@ def test_maa(conversation):
     result = adapter.test(conversation)
     result.to_stdout()
     Path("/tmp/test_cases").mkdir(parents=True, exist_ok=True)
-    with Path(f"tmp/test_cases/{index}. {conversation.title}.case.md").open("w") as f:
+    passed = "p" if result.errors == [] else "f"
+
+    with Path(f"tmp/test_cases/{index_str(index)}. {conversation.title}.{passed}.case.md").open("w") as f:
         f.write(result.to_markdown(index=index))
 
     assert result.errors == [], f"Found {len(result.errors)} error(s) when evaluating the test"
