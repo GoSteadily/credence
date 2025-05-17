@@ -115,7 +115,7 @@ class ChatbotMetadataEquals(ChatbotMetadataCheck):
         return f'Metadata("{self.key}").equals("{self.string}")'
 
     def humanize(self):
-        return f"metadata `{self.key}` should be '{self.string}'"
+        return f"metadata `{self.key}` should be `{self.string}`"
 
     def find_error(self, value):
         if str(value) != self.string:

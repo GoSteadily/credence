@@ -5,6 +5,7 @@ from typing import List, Tuple
 from credence.exceptions import ChatbotIndexedException
 from credence.interaction.chatbot.check.ai_content_check import AIContentCheck
 from credence.interaction.chatbot.check.base import BaseCheck
+from credence.message import Message
 from credence.role import Role
 
 
@@ -74,7 +75,7 @@ class ChatbotResponseAICheck(BaseCheck):
     def humanize(self):
         return f"should {self.prompt}"
 
-    def find_error(self, messages: List[Tuple[int, Role, str]], adapter):
+    def find_error(self, messages: List[Message], adapter):
         from credence.adapter import Adapter
 
         if not isinstance(adapter, Adapter):
@@ -88,9 +89,9 @@ class ChatbotResponseAICheck(BaseCheck):
         )
 
         last_assistant_message = (0, "None")
-        for index, role, message in reversed(messages):
-            if role == Role.Chatbot:
-                last_assistant_message = (index, message)
+        for message in reversed(messages):
+            if message.role == Role.Chatbot:
+                last_assistant_message = (message.index, message.body)
                 break
 
         return result.generate_error(chatbot_response=last_assistant_message)

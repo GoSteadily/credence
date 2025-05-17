@@ -24,12 +24,16 @@ def clear():
     metadata = {}
 
 
+def get_values():
+    return metadata
+
+
 def get_value(key: str):
     try:
         global metadata
         return metadata[key]
     except KeyError as e:
-        raise Exception(f"Could not find {key} in metadata. Available keys are: {list(metadata.keys())}") from e
+        raise Exception(f"Could not find `{key}` in metadata. Available keys are: {list(metadata.keys())}") from e
 
 
 def set_value(key: str, value: str):

@@ -16,7 +16,7 @@ from credence.interaction.chatbot import (
 from credence.interaction.nested_conversation import NestedConversation
 from credence.interaction.user import UserGenerated, UserMessage
 from credence.role import Role
-from credence.test_result import TestResult
+from credence.test_result import Message, TestResult
 
 logger = logging.getLogger(__name__)
 """@private"""
@@ -143,7 +143,7 @@ class Adapter(abc.ABC):
         self.client: Instructor | None = None
         """@private"""
 
-        self.messages: List[Tuple[int, Role, str]] = []
+        self.messages: List[Message] = []
         """@private"""
 
         self.next_message_index: int = 0
@@ -283,9 +283,21 @@ class Adapter(abc.ABC):
         return self
 
     def _add_message(self, role: Role, message: str):
-        self.messages.append((self.next_message_index, role, message))
+        from credence import metadata
+
+        message_metadata = None
         if role == Role.Chatbot:
             self.queue.put_nowait((self.next_message_index, message))
+            message_metadata = metadata.get_values()
+
+        self.messages.append(
+            Message(
+                self.next_message_index,
+                role=role,
+                body=message,
+                metadata=message_metadata,
+            )
+        )
 
         self.next_message_index += 1
 
@@ -317,9 +329,6 @@ class Adapter(abc.ABC):
                     self._assert_no_chatbot_messages()
                     self._add_message(Role.User, interaction.text)
 
-                    from credence import metadata
-
-                    metadata.clear()
                     chatbot_response = self.handle_message(interaction.text)
 
                     if chatbot_response:
@@ -412,15 +421,15 @@ class Adapter(abc.ABC):
         self,
         client: Instructor,
         interaction: UserGenerated,
-        messages: List[Tuple[int, Role, str]],
+        messages: List[Message],
     ):
         llm_messages: List[ChatCompletionMessageParam] = []
 
         prompt = self.user_simulator_system_prompt() or default_user_simulator_system_prompt
         if messages:
             context = "\nContext:"
-            for _, role, message in messages:
-                context += f"{str(role)}: {message}\n"
+            for message in messages:
+                context += f"{str(message.role)}: {message.body}\n"
 
             prompt += context
 

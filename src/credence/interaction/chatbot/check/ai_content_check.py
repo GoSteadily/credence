@@ -1,6 +1,6 @@
 import logging
 from textwrap import dedent
-from typing import List, Tuple
+from typing import List
 
 import instructor
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam
@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from termcolor import colored
 
 from credence.exceptions import ColoredException
-from credence.role import Role
+from credence.message import Message
 
 """@private"""
 
@@ -35,7 +35,7 @@ class AIContentCheck(BaseModel):
     def check_requirement(
         client: instructor.Instructor,
         model_name: str,
-        messages: List[Tuple[int, Role, str]],
+        messages: List[Message],
         requirement: str,
         # For brittle tests, increase retries to give the LLM
         # multiple chances to mark a requirement as met
@@ -53,9 +53,8 @@ class AIContentCheck(BaseModel):
 
         if messages:
             chat_log = ""
-            for _, _role, message in messages:
-                role: Role = _role
-                chat_log = chat_log + f"{role.value}: {message}\n"
+            for message in messages:
+                chat_log = chat_log + f"{message.role.value}: {message.body}\n"
 
             request_messages.append(
                 ChatCompletionUserMessageParam(
