@@ -24,7 +24,7 @@ You may use, copy, modify, create derivative works of, and distribute the Licens
 
 | Version | Date |
 |---|---|
-| v0.1.7 | 2029‑04‑28 |
+| v0.1.0 | 2029‑05‑21 |
 
 ### Change License:
 
