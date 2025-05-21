@@ -292,7 +292,7 @@ class Adapter(abc.ABC):
 
         self.messages.append(
             Message(
-                self.next_message_index,
+                index=self.next_message_index,
                 role=role,
                 body=message,
                 metadata=message_metadata,
@@ -353,7 +353,7 @@ class Adapter(abc.ABC):
                     generation_start_time = time.time()
 
                     chatbot_response = self._get_queued_chatbot_message()
-                    exceptions = interaction._check(
+                    exceptions = interaction.check(
                         adapter=self,
                         messages=self.messages,
                         chatbot_response=chatbot_response,

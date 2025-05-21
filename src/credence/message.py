@@ -8,7 +8,7 @@ from credence.role import Role
 class Message:
     "@private"
 
-    index: int
     role: Role
     body: str
+    index: int = 0
     metadata: Dict[str, Any] | None = None

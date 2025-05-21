@@ -5,7 +5,7 @@ from credence.interaction import Interaction
 from credence.interaction.chatbot.check import BaseCheck
 from credence.interaction.chatbot.check.metadata import ChatbotMetadataCheck
 from credence.interaction.chatbot.check.response import ChatbotResponseAICheck, ChatbotResponseCheck
-from credence.role import Role
+from credence.message import Message
 
 
 class Chatbot:
@@ -41,10 +41,10 @@ class ChatbotResponds(Interaction):
 Chatbot.responds([{expectations_str}{closing_str})
 """.strip()
 
-    def _check(
+    def check(
         self,
         adapter,
-        messages: List[Tuple[int, Role, str]],
+        messages: List[Message],
         chatbot_response: Tuple[int, str],
     ) -> List[Exception]:
         from credence import metadata

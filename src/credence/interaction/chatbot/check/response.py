@@ -112,6 +112,7 @@ class ChatbotResponseContains(ChatbotResponseCheck):
         return f"response should contain '{self.string}'"
 
     def find_error(self, value: Tuple[int, str]):
+        value = prepare_value(value)
         if self.string not in value[1]:
             return ChatbotIndexedException(value[0], f"Expected chatbot response to contain `{str_repr(self.string)}`, but found `{str_repr(value[1])}`")
 
@@ -131,6 +132,7 @@ class ChatbotResponseNotContain(ChatbotResponseCheck):
         return f"response should not contain '{self.string}'"
 
     def find_error(self, value: Tuple[int, str]):
+        value = prepare_value(value)
         if self.string in value[1]:
             return ChatbotIndexedException(value[0], f"Expected chatbot response to not contain `{str_repr(self.string)}`, but found `{str_repr(value[1])}`")
 
@@ -150,6 +152,7 @@ class ChatbotResponseEquals(ChatbotResponseCheck):
         return f"should respond with '{self.string}'"
 
     def find_error(self, value: Tuple[int, str]):
+        value = prepare_value(value)
         if self.string != value[1]:
             return ChatbotIndexedException(value[0], f"Expected chatbot response to equal `{str_repr(self.string)}`, but found `{str_repr(value[1])}`")
 
@@ -169,6 +172,7 @@ class ChatbotResponseNotEquals(ChatbotResponseCheck):
         return f"response should not be '{self.string}'"
 
     def find_error(self, value: Tuple[int, str]):
+        value = prepare_value(value)
         if self.string == value[1]:
             return ChatbotIndexedException(value[0], f"Expected chatbot response to not equal `{self.string}`, but found `{str_repr(value[1])}`")
 
@@ -188,7 +192,7 @@ class ChatbotResponseRegexMatch(ChatbotResponseCheck):
         return f"should match '{self.pattern.pattern}'"
 
     def find_error(self, value):
-        value: Tuple[int, str] = value
+        value = prepare_value(value)
         if re.search(self.pattern, value[1]) is None:
             return ChatbotIndexedException(value[0], f"Expected chatbot response to match the regex {self.pattern.pattern}, but found `{value[1]}`")
 
@@ -198,3 +202,12 @@ def str_repr(string: str):
     @private
     """
     return f"{string.__repr__()}"
+
+
+def prepare_value(value: str | Tuple[int, str]):
+    """
+    @private
+    """
+    if isinstance(value, str):
+        value = (0, value)
+    return value
