@@ -84,7 +84,7 @@ Metadata("router.agent").equals(Agent.XYZ)
 ## Installation
 
 ```bash
-uv add git+https://github.com/GoSteadily/credence --tag 0.1.9
+uv add --dev git+https://github.com/GoSteadily/credence --tag 0.1.0
 ```
 
 <details>
