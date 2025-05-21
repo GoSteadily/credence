@@ -56,8 +56,7 @@ def conversations():
             User.generated("Say hello and introduce yourself as John"),
             Chatbot.responds(
                 [
-                    Response.ai_check(
-                        should="greet the user using his name - John", retries=2),
+                    Response.ai_check(should="greet the user using his name - John", retries=2),
                     Response.ai_check(should="introduce itself as Credence", retries=1),
                     Response.contains(string="John"),
                     Response.re_match(regexp="Hi|Hello"),
@@ -91,39 +90,48 @@ def conversations():
     return [
         (False, failing_test),
         (True, user_registration_flow),
-        (True, Conversation(
-            title="we answer registered user's math questions",
-            interactions=[
-                Conversation.nested(user_registration_flow),
-                User.message("math:1 + 1"),
-                Chatbot.responds(
-                    [
-                        Response.equals("2"),
-                        Metadata("chatbot.handler").equals("math"),
-                        Metadata("chatbot.math.result").equals(2),
-                    ]
-                ),
-            ],
-        )),
-        (True, Conversation(
-            title="we greet unknown users generically",
-            interactions=[
-                User.message("Hello, I'm John"),
-                Chatbot.responds(
-                    [
-                        Response.contains(string="there"),
-                        Response.re_match(regexp="Hi|Hello"),
-                    ]
-                ),
-            ],
-        )),
-        (True, Conversation(
-            title="we ignore unknown users' math questions",
-            interactions=[
-                User.message("math:1 + 1"),
-                Chatbot.ignores_mesage(),
-            ],
-        )),
+        (
+            True,
+            Conversation(
+                title="we answer registered user's math questions",
+                interactions=[
+                    Conversation.nested(user_registration_flow),
+                    User.message("math:1 + 1"),
+                    Chatbot.responds(
+                        [
+                            Response.equals("2"),
+                            Metadata("chatbot.handler").equals("math"),
+                            Metadata("chatbot.math.result").equals(2),
+                        ]
+                    ),
+                ],
+            ),
+        ),
+        (
+            True,
+            Conversation(
+                title="we greet unknown users generically",
+                interactions=[
+                    User.message("Hello, I'm John"),
+                    Chatbot.responds(
+                        [
+                            Response.contains(string="there"),
+                            Response.re_match(regexp="Hi|Hello"),
+                        ]
+                    ),
+                ],
+            ),
+        ),
+        (
+            True,
+            Conversation(
+                title="we ignore unknown users' math questions",
+                interactions=[
+                    User.message("math:1 + 1"),
+                    Chatbot.ignores_mesage(),
+                ],
+            ),
+        ),
     ]
 
 
@@ -154,7 +162,7 @@ def index_str(index):
 
 @pytest.mark.parametrize("conversation", enumerate(require_unique(conversations()), 1))
 def test_maa(conversation):
-    index, (should_pass,conversation) = conversation
+    index, (should_pass, conversation) = conversation
     adapter = MathChatbotAdapter()
 
     result = adapter.test(conversation)
@@ -166,9 +174,9 @@ def test_maa(conversation):
         f.write(result.to_markdown(index=index))
 
     if should_pass:
-        assert result.errors == [    ], f"Found {len(result.errors)} error(s) when evaluating the test"
+        assert result.errors == [], f"Found {len(result.errors)} error(s) when evaluating the test"
     else:
-        assert result.errors != [    ], "Found 0 error(s) when evaluating a test that should fail"
+        assert result.errors != [], "Found 0 error(s) when evaluating a test that should fail"
 
 
 def test_checks():
@@ -245,14 +253,12 @@ Response.ai_check(
     assert str(Response.re_match("there")) == 'Response.re_match("there")'
 
     assert str(Metadata("key").equals("there")) == 'Metadata("key").equals("there")'
-    assert str(Metadata("key").not_equals("there")
-               ) == 'Metadata("key").not_equals("there")'
+    assert str(Metadata("key").not_equals("there")) == 'Metadata("key").not_equals("there")'
     assert str(Metadata("key").contains("there")) == 'Metadata("key").contains("there")'
     assert str(Metadata("key").re_match("there")) == 'Metadata("key").re_match("there")'
     assert str(Metadata("key").one_of([1, 2, 3])) == 'Metadata("key").one_of([1, 2, 3])'
 
-    assert str(External("register_user", {"name": "John"})
-               ) == "External('register_user', {'name': 'John'})"
+    assert str(External("register_user", {"name": "John"})) == "External('register_user', {'name': 'John'})"
     assert str(External("register_user", {})) == "External('register_user')"
 
     assert str(
