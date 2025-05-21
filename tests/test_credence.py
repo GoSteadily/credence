@@ -167,7 +167,7 @@ def test_maa(conversation):
 
     result = adapter.test(conversation)
     result.to_stdout()
-    Path("/tmp/test_cases").mkdir(parents=True, exist_ok=True)
+    Path("tmp/test_cases").mkdir(parents=True, exist_ok=True)
     passed = "p" if result.errors == [] else "f"
 
     with Path(f"tmp/test_cases/{index_str(index)}. {conversation.title}.{passed}.case.md").open("w") as f:
