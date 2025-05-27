@@ -140,13 +140,12 @@ class TestResult:
 
                             marks = " ".join(marks)
 
-                            checks = []
                             with DetailsAndSummary(doc, f"Checks <code>{marks}</code>", escape_html=False):
                                 for expectation in interaction.expectations:
                                     prefix = "`✅`" if expectation.passed else "`❌`"
-                                    checks.append(f"{prefix} {expectation.humanize()}")
-                                doc.addUnorderedList(checks)
-
+                                    doc.writeText(f"  * {prefix} {escape(expectation.humanize(), quote=False)}")
+                                doc.writeTextLine()
+                                
                         with DetailsAndSummary(doc, "Metadata", escape_html=False):
                             doc.addTable(
                                 header_names=["Key", "Value"],
