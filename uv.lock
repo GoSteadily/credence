@@ -190,7 +190,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "instructor", specifier = ">=1.7.9" },
-    { name = "python-markdown-generator", git = "https://github.com/GoSteadily/python-markdown-generator" },
+    { name = "python-markdown-generator", git = "https://github.com/GoSteadily/python-markdown-generator?rev=c75b30c16ff657c23313620c67440bebdaaee61a" },
     { name = "termcolor", specifier = ">=3.0.1" },
 ]
 
@@ -749,7 +749,7 @@ wheels = [
 [[package]]
 name = "python-markdown-generator"
 version = "0.1.0"
-source = { git = "https://github.com/GoSteadily/python-markdown-generator#47241fa23d7c8fd20c513c6532251deb0eda4985" }
+source = { git = "https://github.com/GoSteadily/python-markdown-generator?rev=c75b30c16ff657c23313620c67440bebdaaee61a#c75b30c16ff657c23313620c67440bebdaaee61a" }
 
 [[package]]
 name = "requests"

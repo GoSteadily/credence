@@ -23,7 +23,7 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
-python-markdown-generator = { git = "https://github.com/GoSteadily/python-markdown-generator" }
+python-markdown-generator = { git = "https://github.com/GoSteadily/python-markdown-generator", rev = "c75b30c16ff657c23313620c67440bebdaaee61a" }
 
 [tool.pytest.ini_options]
 filterwarnings = [
