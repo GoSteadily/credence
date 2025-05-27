@@ -134,9 +134,11 @@ class TestResult:
                         doc.addHorizontalRule()
 
                         if interaction.expectations != []:
-                            marks = ""
+                            marks = []
                             for expectation in interaction.expectations:
-                                marks += " ✅" if expectation.passed else " ❌"
+                                marks.append("✅" if expectation.passed else "❌")
+
+                            marks = " ".join(marks)
 
                             checks = []
                             with DetailsAndSummary(doc, f"Checks <code>{marks}</code>", escape_html=False):
