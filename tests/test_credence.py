@@ -87,8 +87,22 @@ def conversations():
         ],
     )
 
+    failing_test2 = Conversation(
+        title="Failing test 2",
+        interactions=[
+            External("register_user", {"name": "John"}),
+            User.generated("Say hello and introduce yourself as John"),
+            Chatbot.responds(
+                [
+                    Metadata("unknown metadata").re_match("fail{2}"),
+                ]
+            ),
+        ],
+    )
+
     return [
         (False, failing_test),
+        (False, failing_test2),
         (True, user_registration_flow),
         (
             True,

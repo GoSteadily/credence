@@ -62,10 +62,14 @@ Chatbot.responds([{expectations_str}{closing_str})
                 )
 
             elif isinstance(expectation, ChatbotMetadataCheck):
-                value = metadata.get_value(expectation.key)
-                exceptions.extend(
-                    expectation.check(value),
-                )
+                try:
+                    value = metadata.get_value(expectation.key)
+                    exceptions.extend(
+                        expectation.check(value),
+                    )
+                except Exception as e:
+                    expectation.passed = False
+                    exceptions.append(e)
 
         metadata.clear()
         return exceptions

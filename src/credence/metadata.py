@@ -33,7 +33,8 @@ def get_value(key: str):
         global metadata
         return metadata[key]
     except KeyError as e:
-        raise Exception(f"Could not find `{key}` in metadata. Available keys are: {list(metadata.keys())}") from e
+        keys = ", ".join([f"`{k}`" for k in metadata.keys()])
+        raise Exception(f"Could not find `{key}` in metadata. Available keys are: [{keys}]") from e
 
 
 def set_value(key: str, value: str):
