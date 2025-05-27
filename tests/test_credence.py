@@ -95,7 +95,7 @@ def conversations():
             Conversation(
                 title="we answer registered user's math questions",
                 interactions=[
-                    Conversation.nested(user_registration_flow),
+                    Conversation.nested("User Registration Flow", user_registration_flow),
                     User.message("math:1 + 1"),
                     Chatbot.responds(
                         [
@@ -277,6 +277,7 @@ Conversation(
 
     assert str(
         Conversation.nested(
+            "Name",
             Conversation(
                 title="ABC",
                 interactions=[],
@@ -285,6 +286,7 @@ Conversation(
     ) == (
         """
 Conversation.nested(
+  'Name',
   Conversation(
     title="ABC",
     interactions=[],
@@ -295,6 +297,7 @@ Conversation.nested(
 
     assert str(
         Conversation.nested(
+            "ABC Flow",
             Conversation(
                 title="ABC",
                 interactions=[
@@ -312,6 +315,7 @@ Conversation.nested(
     ) == (
         """
 Conversation.nested(
+  'ABC Flow',
   Conversation(
     title="ABC",
     interactions=[

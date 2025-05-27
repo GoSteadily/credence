@@ -32,7 +32,7 @@ class NestedConversation(Interaction):
         title="chatbot can answer weather related questions",
         interactions=[
             # Reuse the agree_to_tos_conversation
-            Conversation.nested(agree_to_tos_conversation),
+            Conversation.nested("Register User Flow", agree_to_tos_conversation),
             User.message("What is the weather in London?"),
             Chatbot.responds([Response.equals("It is drizzling.")]),
         ],
@@ -42,7 +42,7 @@ class NestedConversation(Interaction):
         title="chatbot asks for extra information when asked ambiguous weather related questions",
         interactions=[
             # Reuse the agree_to_tos_conversation
-            Conversation.nested(agree_to_tos_conversation),
+            Conversation.nested("Register User Flow", agree_to_tos_conversation),
             User.message("What is the weather?"),
             Chatbot.responds([Response.equals("Which city are you interested in?")]),
         ],
@@ -50,14 +50,22 @@ class NestedConversation(Interaction):
     ```
     """
 
+    name: str
+    """@private The name given to the nested conversation"""
+
     conversation: Conversation
     """@private The nested conversation"""
 
     def __str__(self):
         nested_conversation_str = str(self.conversation)
-        nested_conversation_str = "".join([f"  {line}" for line in nested_conversation_str.splitlines(keepends=True)])
+        nested_conversation_str = "".join([f"  {line}" for line in nested_conversation_str.splitlines(keepends=True)]).strip()
 
-        return f"Conversation.nested(\n{nested_conversation_str},\n)"
+        return f"""
+Conversation.nested(
+  {self.name.__repr__()},
+  {nested_conversation_str},
+)
+""".strip()
 
     def is_user_interaction(self) -> bool:
         return False

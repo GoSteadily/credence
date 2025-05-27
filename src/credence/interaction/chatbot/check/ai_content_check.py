@@ -125,7 +125,7 @@ class AIContentCheck(BaseModel):
     def _exception_message(self, chatbot_response: str, colorize: bool, markdown: bool = False):
         if markdown:
             return (
-                f"chatbot response did not pass AI check:<br>\n\n"
+                f"chatbot response did not pass AI check:\n\n"
                 f"| **requirement** | The chatbot should {self.requirement} |\n"
                 f"| --------------- | ------------------------------------- |\n"
                 f"|    **response** | {chatbot_response}                    |\n"

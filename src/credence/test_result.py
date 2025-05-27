@@ -1,13 +1,17 @@
-import itertools
+import tempfile
 from dataclasses import dataclass
+from html import escape
+from pathlib import Path
 from typing import Any, List
 
+from markdowngenerator import MarkdownGenerator
 from termcolor import cprint
 
 from credence.conversation import Conversation
 from credence.exceptions import ColoredException
-from credence.interaction.chatbot import ChatbotResponds
+from credence.interaction.chatbot import ChatbotIgnoresMessage, ChatbotResponds
 from credence.interaction.nested_conversation import NestedConversation
+from credence.interaction.user import UserGenerated, UserMessage
 from credence.message import Message
 from credence.role import Role
 
@@ -53,117 +57,100 @@ class TestResult:
         cprint("")
 
     def to_markdown(self, index=None):
-        passed = "`✅` "
-        if self.errors != []:
-            passed = "`❌` "
+        with tempfile.TemporaryDirectory() as tmpdir:
+            filename = Path(tmpdir).joinpath("default.md")
+            with MarkdownGenerator(filename=filename, enable_TOC=False, enable_write=False) as doc:
+                prefix = "✅" if self.errors == [] else "❌"
 
-        index_str = ""
-        if index:
-            index_str = f"{index}. "
+                index_str = f"{index}. " if index else ""
 
-        md = f"""
-<details>
-<summary>
+                with DetailsAndSummary(doc, f"<h3><code>{prefix}</code> {index_str}{escape(self.conversation.title, quote=False)}</h3>", escape_html=False):
+                    doc.addHeader(3, "Conversation")
+                    self._add_conversation(doc, self.conversation, self.messages.copy())
 
-### {index_str}{passed} {self.conversation.title}
+                    doc.addHorizontalRule()
 
-</summary>
+                    if self.errors:
+                        with DetailsAndSummary(doc, "Errors"):
+                            for index, error in enumerate(self.errors, 1):
+                                if isinstance(error, ColoredException):
+                                    doc.writeTextLine(f"{index}. {error.markdown_message}\n", html_escape=False)
+                                else:
+                                    doc.writeTextLine(f"{index}. {error}\n", html_escape=False)
 
-### Conversation
+                    with DetailsAndSummary(doc, f"Time taken - {(self.chatbot_time_ms) / 1000}s"):
+                        total_time = self.chatbot_time_ms + self.testing_time_ms
 
-"""
-        md += "| Role | Message | Checks | Metadata |\n"
-        md += "|------|---------|--------|----------|\n"
+                        doc.addTable(
+                            header_names=["Name", "Time"],
+                            row_elements=[
+                                ["Total Time  ", _ms_to_s(total_time)],
+                                ["Chatbot Time", _ms_to_s(self.chatbot_time_ms)],
+                                ["Testing Time", _ms_to_s(self.testing_time_ms)],
+                            ],
+                            alignment="right",
+                        )
 
-        interactions = self._get_internal_interactions()
+                    with DetailsAndSummary(doc, "Code"):
+                        doc.addCodeBlock(f"{self.conversation}", "python")
 
-        # TODO: Replace this zipping with another approach
-        # Right now, we assume that
-        for message, interaction in zip(self.messages, interactions, strict=False):
-            if message.role == Role.User:
-                name = "user"
-                md += f"| `{name}` | **{message.body.replace('\n', '<br>')}** | | |\n"
-            if message.role == Role.Chatbot:
-                name = "asst"
+        return "".join(doc.document_data_array)
 
-                requirements = []
-                if isinstance(interaction, ChatbotResponds):
+    def _add_conversation(self, doc: MarkdownGenerator, conversation: Conversation, messages: List[Message]):
+        from credence.interaction.external import External
+
+        for interaction in conversation.interactions:
+            if isinstance(interaction, NestedConversation):
+                with DetailsAndSummary(doc, "🧵 " + interaction.name):
+                    self._add_conversation(doc, interaction.conversation, messages)
+
+            elif isinstance(interaction, External):
+                pass
+
+            elif isinstance(interaction, UserGenerated) or isinstance(interaction, UserMessage):
+                message = messages[0]
+                messages.remove(message)
+
+                if message.role == Role.User:
+                    title = f"<code>user:</code> {escape(message.body, quote=False)}"
+                    with DetailsAndSummary(doc, title, escape_html=False):
+                        pass
+
+            elif isinstance(interaction, ChatbotIgnoresMessage):
+                with DetailsAndSummary(doc, "<code>asst: </code> ", escape_html=False):
+                    pass
+
+            elif isinstance(interaction, ChatbotResponds):
+                message = messages[0]
+                messages.remove(message)
+
+                if message.role == Role.Chatbot:
+                    failed = False
                     for expectation in interaction.expectations:
-                        prefix = "`✅`" if expectation.passed else "`❌`"
-                        requirements.append(f"{prefix} {expectation.humanize()}".replace("\n", "<br>"))
+                        failed = failed or not expectation.passed
 
-                name_ = name.replace("\n", "<br>")
-                body = message.body.replace("\n", "<br>")
+                    name = f"asst{' ❌' if failed else ''}:"
+                    with DetailsAndSummary(doc, f"<code>{name}</code>  {escape(message.body, quote=False)}", escape_html=False):
+                        doc.addHorizontalRule()
 
-                if requirements or message.metadata:
-                    for index, (requirement, metadata_pair) in enumerate(itertools.zip_longest(requirements, message.metadata.items())):
-                        metadata_str = ""
-                        if metadata_pair:
-                            metadata_str = f"`{metadata_pair[0]}`: {metadata_pair[1].replace('\n', '<br>')}"
+                        if interaction.expectations != []:
+                            marks = ""
+                            for expectation in interaction.expectations:
+                                marks += " ✅" if expectation.passed else " ❌"
 
-                        requirement_str = ""
-                        if requirement:
-                            requirement_str = f"{requirement.replace('\n', '<br>')}"
+                            checks = []
+                            with DetailsAndSummary(doc, f"Checks <code>{marks}</code>", escape_html=False):
+                                for expectation in interaction.expectations:
+                                    prefix = "`✅`" if expectation.passed else "`❌`"
+                                    checks.append(f"{prefix} {expectation.humanize()}")
+                                doc.addUnorderedList(checks)
 
-                        if index == 0:
-                            md += f"| `{name_}` | {body} | {requirement_str} | {metadata_str} |\n"
-                        else:
-                            md += f"|           |        | {requirement_str} | {metadata_str} |\n"
-
-                else:
-                    md += f"| `{name_}` | {body} | — | — |\n"
-
-        if self.errors:
-            md += """
----
-
-### Errors
-
-"""
-
-            for index, error in enumerate(self.errors, 1):
-                if isinstance(error, ColoredException):
-                    md += f"{index}. {error.markdown_message}<br>\n"
-                else:
-                    md += f"{index}. {error}<br>\n"
-        md += f"""
-<br>
-
----
-
-<br>
-<details>
-<summary>
-
-### Time taken - {(self.chatbot_time_ms) / 1000}s
-
-</summary>
-
-| Total Time   | {(self.chatbot_time_ms + self.testing_time_ms) / 1000}s |
-| ------------ | ------ |
-| Chatbot Time | {self.chatbot_time_ms / 1000}s   |
-| Testing Time  | {self.testing_time_ms / 1000}s   |
-
-</details>
-
-
-
-
-<details>
-<summary>
-
-### Code
-
-</summary>
-
-```python
-{self.conversation}
-```
-
-</details>
-"""
-        md += "\n</details>\n\n---\n\n"
-        return md
+                        with DetailsAndSummary(doc, "Metadata", escape_html=False):
+                            doc.addTable(
+                                header_names=["Key", "Value"],
+                                row_elements=[[k, v] for (k, v) in message.metadata.items()],
+                                alignment="left",
+                            )
 
     def _get_internal_interactions(self):
         return self._do_get_internal_interactions(interactions=[], conversation=self.conversation)
@@ -182,3 +169,22 @@ class TestResult:
                 interactions.append(interaction)
 
         return interactions
+
+
+class DetailsAndSummary:
+    "@private"
+
+    def __init__(self, doc: MarkdownGenerator, title: str, escape_html: bool = True):
+        self.doc = doc
+        self.title = title
+        self.escape_html = escape_html
+
+    def __enter__(self):
+        self.doc.insertDetailsAndSummary(self.title, escape_html=self.escape_html)
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.doc.endDetailsAndSummary()
+
+
+def _ms_to_s(ms):
+    return f"{ms / 1000}s"
