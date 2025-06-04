@@ -7,6 +7,7 @@ from typing import List, Tuple
 import instructor
 import openai
 import pytest
+from credence.checker import LLMChecker
 from support.math_chatbot import MathChatbot
 
 from credence.adapter import Adapter, Role
@@ -48,6 +49,18 @@ class MathChatbotAdapter(Adapter):
         self.context["user"] = name
 
 
+class MyLLMChecker(LLMChecker):
+    def create_client(self):
+        client = openai.OpenAI(
+            api_key=os.environ["OPENAI_API_KEY"],
+        )
+
+        return instructor.from_openai(client, mode=instructor.Mode.TOOLS)
+
+    def model_name(self):
+        return os.environ.get("MODEL_NAME", "gpt-4.1-mini")
+
+
 def conversations():
     user_registration_flow = Conversation(
         title="we greet registered users by name",
@@ -56,7 +69,8 @@ def conversations():
             User.generated("Say hello and introduce yourself as John"),
             Chatbot.responds(
                 [
-                    Response.ai_check(should="greet the user using his name - John", retries=2),
+                    Response.ai_check(
+                        should="greet the user using his name - John", retries=2),
                     Response.ai_check(should="introduce itself as Credence", retries=1),
                     Response.contains(string="John"),
                     Response.re_match(regexp="Hi|Hello"),
@@ -109,7 +123,8 @@ def conversations():
             Conversation(
                 title="we answer registered user's math questions",
                 interactions=[
-                    Conversation.nested("User Registration Flow", user_registration_flow),
+                    Conversation.nested("User Registration Flow",
+                                        user_registration_flow),
                     User.message("math:1 + 1"),
                     Chatbot.responds(
                         [
@@ -188,9 +203,30 @@ def test_maa(conversation):
         f.write(result.to_markdown(index=index))
 
     if should_pass:
-        assert result.errors == [], f"Found {len(result.errors)} error(s) when evaluating the test"
+        assert result.errors == [
+        ], f"Found {len(result.errors)} error(s) when evaluating the test"
     else:
-        assert result.errors != [], "Found 0 error(s) when evaluating a test that should fail"
+        assert result.errors != [
+        ], "Found 0 error(s) when evaluating a test that should fail"
+
+
+def test_assert_that():
+    c = MyLLMChecker()
+
+    c.assert_that("Hi there", "is a greeting")
+    c.assert_that("Hi there", "is written in English")
+    c.assert_that("Hi there", "is not written in French")
+    
+    with pytest.raises(AssertionError):
+        c.assert_that("Hi there", "is written in French")
+    
+    with pytest.raises(AssertionError):
+        c.assert_that("Salut", "is written in English")
+
+    with pytest.raises(AssertionError):
+        c.assert_that("1 + 1 = 4", "is mathematically correct")
+
+
 
 
 def test_checks():
@@ -251,7 +287,7 @@ def test_checks():
         pass
 
 
-def test_string():
+def test_string_encoding():
     assert str(Response.ai_check(should="there")) == "Response.ai_check(should='there')"
     assert (
         str(Response.ai_check(should="there", retries=3))
@@ -267,12 +303,14 @@ Response.ai_check(
     assert str(Response.re_match("there")) == 'Response.re_match("there")'
 
     assert str(Metadata("key").equals("there")) == 'Metadata("key").equals("there")'
-    assert str(Metadata("key").not_equals("there")) == 'Metadata("key").not_equals("there")'
+    assert str(Metadata("key").not_equals("there")
+               ) == 'Metadata("key").not_equals("there")'
     assert str(Metadata("key").contains("there")) == 'Metadata("key").contains("there")'
     assert str(Metadata("key").re_match("there")) == 'Metadata("key").re_match("there")'
     assert str(Metadata("key").one_of([1, 2, 3])) == 'Metadata("key").one_of([1, 2, 3])'
 
-    assert str(External("register_user", {"name": "John"})) == "External('register_user', {'name': 'John'})"
+    assert str(External("register_user", {"name": "John"})
+               ) == "External('register_user', {'name': 'John'})"
     assert str(External("register_user", {})) == "External('register_user')"
 
     assert str(

@@ -17,7 +17,7 @@ from credence.role import Role
 
 
 @dataclass
-class TestResult:
+class Result:
     messages: List[Message]
     errors: List[Any]
     conversation: Conversation
@@ -26,11 +26,10 @@ class TestResult:
 
     def to_stdout(self):
         cprint("")
-        cprint("------------ TestResult ------------", attrs=["bold"])
+        cprint("------------ Result ------------", attrs=["bold"])
         cprint(self.conversation.title)
         cprint("------------------------------------")
-        cprint(
-            f"  Total Time:  {(self.chatbot_time_ms + self.testing_time_ms) / 1000}s")
+        cprint(f"  Total Time:  {(self.chatbot_time_ms + self.testing_time_ms) / 1000}s")
         cprint(f"   Test Time:  {self.testing_time_ms / 1000}s")
         cprint(f"Chatbot Time:  {self.chatbot_time_ms / 1000}s")
         cprint("------------------------------------\n", attrs=["bold"])
@@ -75,11 +74,9 @@ class TestResult:
                         with DetailsAndSummary(doc, "Errors"):
                             for index, error in enumerate(self.errors, 1):
                                 if isinstance(error, ColoredException):
-                                    doc.writeTextLine(
-                                        f"{index}. {error.markdown_message}\n", html_escape=False)
+                                    doc.writeTextLine(f"{index}. {error.markdown_message}\n", html_escape=False)
                                 else:
-                                    doc.writeTextLine(
-                                        f"{index}. {error}\n", html_escape=False)
+                                    doc.writeTextLine(f"{index}. {error}\n", html_escape=False)
 
                     with DetailsAndSummary(doc, f"Time taken - {(self.chatbot_time_ms) / 1000}s"):
                         total_time = self.chatbot_time_ms + self.testing_time_ms
@@ -146,15 +143,13 @@ class TestResult:
                             with DetailsAndSummary(doc, f"Checks <code>{marks}</code>", escape_html=False):
                                 for expectation in interaction.expectations:
                                     prefix = "`✅`" if expectation.passed else "`❌`"
-                                    doc.writeText(
-                                        f"  * {prefix} {escape(expectation.humanize(), quote=False)}")
+                                    doc.writeText(f"  * {prefix} {escape(expectation.humanize(), quote=False)}")
                                 doc.writeTextLine()
 
                         with DetailsAndSummary(doc, "Metadata", escape_html=False):
                             doc.addTable(
                                 header_names=["Key", "Value"],
-                                row_elements=[[k, v]
-                                              for (k, v) in message.metadata.items()],
+                                row_elements=[[k, v] for (k, v) in message.metadata.items()],
                                 alignment="left",
                             )
 

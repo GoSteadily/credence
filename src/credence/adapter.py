@@ -15,8 +15,8 @@ from credence.interaction.chatbot import (
 )
 from credence.interaction.nested_conversation import NestedConversation
 from credence.interaction.user import UserGenerated, UserMessage
+from credence.result import Message, Result
 from credence.role import Role
-from credence.test_result import Message, TestResult
 
 logger = logging.getLogger(__name__)
 """@private"""
@@ -301,7 +301,7 @@ class Adapter(abc.ABC):
 
         self.next_message_index += 1
 
-    def test(self, conversation: Conversation) -> TestResult:
+    def test(self, conversation: Conversation) -> Result:
         """
         Evaluate the conversation against your chatbot
         """
@@ -360,7 +360,7 @@ class Adapter(abc.ABC):
                     )
 
                     if exceptions:
-                        return TestResult(
+                        return Result(
                             conversation=conversation,
                             messages=self.messages,
                             errors=exceptions,
@@ -374,7 +374,7 @@ class Adapter(abc.ABC):
 
         except Exception as e:
             logger.exception("Test failed")
-            return TestResult(
+            return Result(
                 conversation=conversation,
                 messages=self.messages,
                 errors=[e],
@@ -382,7 +382,7 @@ class Adapter(abc.ABC):
                 chatbot_time_ms=round((time.time() - start_time - testing_time) * 1000),
             )
 
-        return TestResult(
+        return Result(
             conversation=conversation,
             messages=self.messages,
             errors=[],
