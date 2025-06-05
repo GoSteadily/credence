@@ -1,15 +1,12 @@
 import abc
 import logging
-from queue import Queue
 from textwrap import dedent
-from typing import Any, Dict, List, Tuple
+from typing import List
 
 import instructor
 from instructor import Instructor
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam
 from pydantic import BaseModel, Field
-
-from credence.result import Message
 
 logger = logging.getLogger(__name__)
 """@private"""
@@ -27,7 +24,7 @@ def _docstring_parameter(*sub):
 
 class LLMChecker(abc.ABC):
     """
-    `LLMChecker` allows credence to check if a string meets a natural language 
+    `LLMChecker` allows credence to check if a string meets a natural language
     assertion.
 
     ---
@@ -64,7 +61,7 @@ class LLMChecker(abc.ABC):
 
     def __init__(self):
         super().__init__()
-        
+
         self.client: Instructor | None = None
         """@private"""
 
@@ -139,8 +136,7 @@ class AssertionCheck(BaseModel):
     reason: str = Field(
         description="Explanation for why the response either meets or does not meet the assertion. Should explicitly state whether the assertion was met."
     )
-    assertion_is_true: bool = Field(
-        description="Whether or not the response meets the assertion.")
+    assertion_is_true: bool = Field(description="Whether or not the response meets the assertion.")
 
     @staticmethod
     def check(

@@ -12,3 +12,4 @@ tmp/
 *.pyc
 .vscode/settings.json
 docs/docs
+*.tmp

@@ -7,16 +7,17 @@ from typing import List, Tuple
 import instructor
 import openai
 import pytest
-from credence.checker import LLMChecker
 from support.math_chatbot import MathChatbot
 
 from credence.adapter import Adapter, Role
+from credence.checker import LLMChecker
 from credence.conversation import Conversation
 from credence.interaction.chatbot import Chatbot
 from credence.interaction.chatbot.check.metadata import Metadata
 from credence.interaction.chatbot.check.response import Response
 from credence.interaction.external import External
 from credence.interaction.user import User
+from credence.json import decode_conversations, download
 from credence.message import Message
 
 
@@ -69,8 +70,7 @@ def conversations():
             User.generated("Say hello and introduce yourself as John"),
             Chatbot.responds(
                 [
-                    Response.ai_check(
-                        should="greet the user using his name - John", retries=2),
+                    Response.ai_check(should="greet the user using his name - John", retries=2),
                     Response.ai_check(should="introduce itself as Credence", retries=1),
                     Response.contains(string="John"),
                     Response.re_match(regexp="Hi|Hello"),
@@ -123,8 +123,7 @@ def conversations():
             Conversation(
                 title="we answer registered user's math questions",
                 interactions=[
-                    Conversation.nested("User Registration Flow",
-                                        user_registration_flow),
+                    Conversation.nested("User Registration Flow", user_registration_flow),
                     User.message("math:1 + 1"),
                     Chatbot.responds(
                         [
@@ -203,11 +202,9 @@ def test_maa(conversation):
         f.write(result.to_markdown(index=index))
 
     if should_pass:
-        assert result.errors == [
-        ], f"Found {len(result.errors)} error(s) when evaluating the test"
+        assert result.errors == [], f"Found {len(result.errors)} error(s) when evaluating the test"
     else:
-        assert result.errors != [
-        ], "Found 0 error(s) when evaluating a test that should fail"
+        assert result.errors != [], "Found 0 error(s) when evaluating a test that should fail"
 
 
 def test_assert_that():
@@ -216,17 +213,15 @@ def test_assert_that():
     c.assert_that("Hi there", "is a greeting")
     c.assert_that("Hi there", "is written in English")
     c.assert_that("Hi there", "is not written in French")
-    
+
     with pytest.raises(AssertionError):
         c.assert_that("Hi there", "is written in French")
-    
+
     with pytest.raises(AssertionError):
         c.assert_that("Salut", "is written in English")
 
     with pytest.raises(AssertionError):
         c.assert_that("1 + 1 = 4", "is mathematically correct")
-
-
 
 
 def test_checks():
@@ -303,14 +298,12 @@ Response.ai_check(
     assert str(Response.re_match("there")) == 'Response.re_match("there")'
 
     assert str(Metadata("key").equals("there")) == 'Metadata("key").equals("there")'
-    assert str(Metadata("key").not_equals("there")
-               ) == 'Metadata("key").not_equals("there")'
+    assert str(Metadata("key").not_equals("there")) == 'Metadata("key").not_equals("there")'
     assert str(Metadata("key").contains("there")) == 'Metadata("key").contains("there")'
     assert str(Metadata("key").re_match("there")) == 'Metadata("key").re_match("there")'
     assert str(Metadata("key").one_of([1, 2, 3])) == 'Metadata("key").one_of([1, 2, 3])'
 
-    assert str(External("register_user", {"name": "John"})
-               ) == "External('register_user', {'name': 'John'})"
+    assert str(External("register_user", {"name": "John"})) == "External('register_user', {'name': 'John'})"
     assert str(External("register_user", {})) == "External('register_user')"
 
     assert str(
@@ -385,3 +378,11 @@ Conversation.nested(
 )
 """.strip()
     )
+
+
+def test_decode():
+    conversations = decode_conversations(download(""))
+
+    for conversation in conversations:
+        print()
+        print(conversation)

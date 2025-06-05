@@ -33,7 +33,7 @@ class ChatbotResponds(Interaction):
                 expectations_str += f"    {line}"
             expectations_str += ","
 
-        closing_str = "]\n"
+        closing_str = "]"
         if len(self.expectations) > 0:
             closing_str = "\n]"
 
