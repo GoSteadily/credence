@@ -1,7 +1,10 @@
+import copy
 from dataclasses import dataclass
 
 from credence.conversation import Conversation
-from credence.interaction import Interaction
+from credence.interaction import Interaction, InteractionResult, InteractionResultStatus
+
+from ..result import Result
 
 
 @dataclass
@@ -22,7 +25,8 @@ class NestedConversation(Interaction):
         title="new user must agree to TOS",
         interactions=[
             User.message("Hi"),
-            Chatbot.responds([Response.equals("Hi. Do you agree to our terms of service?")]),
+            Chatbot.responds(
+                [Response.equals("Hi. Do you agree to our terms of service?")]),
             Chatbot.responds([Response.equals("Yes")]),
             Chatbot.responds([Response.equals("Welcome aboard")]),
         ],
@@ -72,3 +76,32 @@ Conversation.nested(
 
     def is_chatbot_interaction(self) -> bool:
         return False
+
+    def to_result(self, conversation_results: Result, skipped: bool) -> "NestedConversationResult":
+        "@private"
+
+        status = InteractionResultStatus.Passed
+        if conversation_results.failed:
+            status = InteractionResultStatus.Failed
+        if skipped:
+            status = InteractionResultStatus.Skipped
+
+        return NestedConversationResult(
+            data=copy.deepcopy(self),
+            status=status,
+            results=conversation_results,
+        )
+
+
+@dataclass(kw_only=True)
+class NestedConversationResult(InteractionResult):
+    data: NestedConversation
+    status: InteractionResultStatus
+    results: Result
+
+    def generate_error_messages(self):
+        errors = []
+        for result in self.results.interaction_results:
+            errors.extend(result.generate_error_messages())
+
+        return errors

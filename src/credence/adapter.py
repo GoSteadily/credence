@@ -3,18 +3,18 @@ import logging
 import time
 from queue import Empty, Queue
 from textwrap import dedent
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 from instructor import Instructor
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionSystemMessageParam
 
 from credence.conversation import Conversation
+from credence.interaction import InteractionResultStatus
 from credence.interaction.chatbot import (
     ChatbotIgnoresMessage,
     ChatbotResponds,
 )
 from credence.interaction.nested_conversation import NestedConversation
-from credence.interaction.user import UserGenerated, UserMessage
+from credence.interaction.user import UserMessage
 from credence.result import Message, Result
 from credence.role import Role
 
@@ -78,7 +78,7 @@ class Adapter(abc.ABC):
         #    execute during tests
         #
         #    The method below would be executed by adding the following interaction to
-        #    a conversation: `External('register_user', {"name": "some name", "phone_number": "some_number"})`
+        #    a conversation: `FunctionCall('register_user', {"name": "some name", "phone_number": "some_number"})`
         def register_user(self, name: str, phone_number: str):
             # Run a system method eg my_app.register_user(name, phone_number)
             self.context["user"] = name
@@ -100,7 +100,7 @@ class Adapter(abc.ABC):
         conversation = Conversation(
             title="...",
             interactions=[
-                External("register", {"user": "John", "phone_number": "+12345678901"}),
+                FunctionCall("register", {"user": "John", "phone_number": "+12345678901"}),
                 User.message("..."),
                 ...
             ],
@@ -137,7 +137,7 @@ class Adapter(abc.ABC):
         ```
         """
 
-        self.queue: Queue[Tuple[int, str]] = Queue()
+        self.queue: Queue[str] = Queue()
         """@private"""
 
         self.client: Instructor | None = None
@@ -287,7 +287,7 @@ class Adapter(abc.ABC):
 
         message_metadata = None
         if role == Role.Chatbot:
-            self.queue.put_nowait((self.next_message_index, message))
+            self.queue.put_nowait(message)
             message_metadata = metadata.get_values()
 
         self.messages.append(
@@ -305,103 +305,101 @@ class Adapter(abc.ABC):
         """
         Evaluate the conversation against your chatbot
         """
+        return self._test(conversation, False)
 
-        from credence.interaction.external import External
+    def _test(self, conversation: Conversation, has_failed: bool) -> Result:
+        """
+        @private
+        """
 
         start_time = time.time()
         testing_time = 0.0
 
-        try:
-            for interaction in conversation.interactions:
-                if isinstance(interaction, NestedConversation):
-                    result = self.test(interaction.conversation)
-                    testing_time += result.testing_time_ms / 1000
-                    if result.errors:
-                        result.conversation = conversation
-                        result.chatbot_time_ms = round((time.time() - start_time - testing_time) * 1000)
-                        result.testing_time_ms = round(testing_time * 1000)
-                        return result
+        interaction_results = []
 
-                elif isinstance(interaction, External):
+        for interaction in conversation.interactions:
+            from credence.interaction.function_call import FunctionCall
+
+            if isinstance(interaction, NestedConversation):
+                child_conversation_results = self._test(
+                    interaction.conversation,
+                    has_failed=has_failed,
+                )
+
+                interaction_results.append(interaction.to_result(conversation_results=child_conversation_results, skipped=has_failed))
+
+            elif isinstance(interaction, FunctionCall):
+                try:
+                    if has_failed:
+                        interaction_results.append(interaction.skipped())
+                        continue
+
                     interaction.call(self)
+                    interaction_results.append(interaction.passed())
 
-                elif isinstance(interaction, UserMessage):
-                    self._assert_no_chatbot_messages()
-                    self._add_message(Role.User, interaction.text)
+                except Exception as e:
+                    interaction_results.append(interaction.failed(execution_error=f"{e}"))
 
-                    chatbot_response = self.handle_message(interaction.text)
+            elif isinstance(interaction, UserMessage):
+                generation_start_time = time.time()
 
-                    if chatbot_response:
-                        self._add_message(Role.Chatbot, chatbot_response)
+                prompt = self.user_simulator_system_prompt() or default_user_simulator_system_prompt
 
-                elif isinstance(interaction, UserGenerated):
-                    self._assert_no_chatbot_messages()
+                result = interaction.to_result(
+                    skipped=has_failed,
+                    client=self.get_client(),
+                    model_name=self.model_name(),
+                    prompt=prompt,
+                    handle_message=self.handle_message,
+                    messages=self.messages,
+                    next_chatbot_message=self._maybe_get_next_chatbot_message(),
+                )
+                interaction_results.append(result)
 
-                    generation_start_time = time.time()
+                if result.status == InteractionResultStatus.Passed:
+                    self._add_message(Role.User, result.user_message)
+                    if result.chatbot_response:
+                        self._add_message(Role.Chatbot, result.chatbot_response)
+                elif result.user_message:
+                    self._add_message(Role.User, result.user_message)
 
-                    client = self.get_client()
-                    text = self._generate_user_message(client=client, interaction=interaction, messages=self.messages)
-                    testing_time += time.time() - generation_start_time
+                generation_time = time.time() - generation_start_time
+                testing_time += generation_time
 
-                    self._add_message(Role.User, text)
+            elif isinstance(interaction, ChatbotResponds):
+                generation_start_time = time.time()
 
-                    chatbot_response = self.handle_message(text)
-                    if chatbot_response:
-                        self._add_message(Role.Chatbot, chatbot_response)
+                result = interaction.to_result(
+                    adapter=self,
+                    messages=self.messages,
+                    chatbot_response=self._maybe_get_next_chatbot_message(),
+                    skipped=has_failed,
+                )
+                testing_time += time.time() - generation_start_time
 
-                elif isinstance(interaction, ChatbotResponds):
-                    generation_start_time = time.time()
+                interaction_results.append(result)
 
-                    chatbot_response = self._get_queued_chatbot_message()
-                    exceptions = interaction.check(
-                        adapter=self,
-                        messages=self.messages,
-                        chatbot_response=chatbot_response,
-                    )
+            elif isinstance(interaction, ChatbotIgnoresMessage):
+                next_message = self._maybe_get_next_chatbot_message()
+                result = interaction.to_result(next_message=next_message)
+                interaction_results.append(result)
 
-                    if exceptions:
-                        return Result(
-                            conversation=conversation,
-                            messages=self.messages,
-                            errors=exceptions,
-                            testing_time_ms=round(testing_time * 1000),
-                            chatbot_time_ms=round((time.time() - start_time - testing_time) * 1000),
-                        )
-
-                    testing_time += time.time() - generation_start_time
-                elif isinstance(interaction, ChatbotIgnoresMessage):
-                    self._assert_no_chatbot_messages()
-
-        except Exception as e:
-            logger.exception("Test failed")
-            return Result(
-                conversation=conversation,
-                messages=self.messages,
-                errors=[e],
-                testing_time_ms=round(testing_time * 1000),
-                chatbot_time_ms=round((time.time() - start_time - testing_time) * 1000),
-            )
+            has_failed = has_failed or interaction_results[-1].status != InteractionResultStatus.Passed
 
         return Result(
-            conversation=conversation,
+            title=conversation.title,
             messages=self.messages,
-            errors=[],
+            failed=has_failed,
+            interaction_results=interaction_results,
             testing_time_ms=round(testing_time * 1000),
             chatbot_time_ms=round((time.time() - start_time - testing_time) * 1000),
         )
 
-    def _assert_no_chatbot_messages(self):
-        try:
-            message = self.queue.get_nowait()
-            raise Exception(f"Unexpected chatbot message: {message}")
-        except Empty:
-            return None
-
-    def _get_queued_chatbot_message(self):
+    def _maybe_get_next_chatbot_message(self):
         try:
             return self.queue.get_nowait()
         except Empty:
-            raise Exception("Expected a chatbot message but none had been sent") from None
+            return None
 
     @_docstring_parameter(default_user_simulator_system_prompt)
     def user_simulator_system_prompt(self) -> str | None:
@@ -416,33 +414,3 @@ class Adapter(abc.ABC):
         method and returning an alternative prompt.
         """
         return dedent(default_user_simulator_system_prompt).strip()
-
-    def _generate_user_message(
-        self,
-        client: Instructor,
-        interaction: UserGenerated,
-        messages: List[Message],
-    ):
-        llm_messages: List[ChatCompletionMessageParam] = []
-
-        prompt = self.user_simulator_system_prompt() or default_user_simulator_system_prompt
-        if messages:
-            context = "\nContext:"
-            for message in messages:
-                context += f"{str(message.role)}: {message.body}\n"
-
-            prompt += context
-
-        llm_messages.append(
-            ChatCompletionSystemMessageParam(
-                role="system",
-                content=prompt,
-            )
-        )
-
-        llm_messages.append(Role.Chatbot.to_llm_message(interaction.prompt))
-        return client.chat.completions.create(
-            model=self.model_name(),
-            response_model=str,
-            messages=llm_messages,
-        )

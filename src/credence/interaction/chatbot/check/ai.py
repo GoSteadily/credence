@@ -1,4 +1,6 @@
+import copy
 import logging
+from dataclasses import dataclass
 from textwrap import dedent
 from typing import List
 
@@ -8,13 +10,101 @@ from pydantic import BaseModel, Field
 from termcolor import colored
 
 from credence.exceptions import ColoredException
+from credence.interaction.chatbot.check.base import BaseCheckResult, BaseCheckResultStatus
+from credence.interaction.chatbot.check.response import ChatbotResponseCheck
 from credence.message import Message
-
-"""@private"""
-
 
 logger = logging.getLogger(__name__)
 """@private"""
+
+
+@dataclass
+class ChatbotResponseAICheck(ChatbotResponseCheck):
+    """
+    @private
+    """
+
+    prompt: str
+    # Increase the number of retries for brittle tests
+    retries: int = 0
+
+    def __str__(self):
+        if self.retries > 0:
+            return f"""Response.ai_check(
+    should={str_repr(self.prompt)},
+    retries={self.retries},
+)""".strip()
+        else:
+            return f"Response.ai_check(should={str_repr(self.prompt)})"
+
+    def humanize(self):
+        return f"should {self.prompt}"
+
+    def to_check_result(self, messages: List[Message], adapter, skipped: bool = False):
+        if skipped:
+            return self.skipped()
+
+        from credence.adapter import Adapter
+
+        if not isinstance(adapter, Adapter):
+            return self.failed(invalid_adapter_error=f"{adapter} is not a valid Adapter")
+
+        try:
+            result = AIContentCheck.check_requirement(
+                client=adapter.get_client(),
+                model_name=adapter.model_name(),
+                messages=messages,
+                requirement=self.prompt,
+            )
+        except Exception as e:
+            return self.failed(generation_error=f"{e}")
+
+        if result.requirement_met:
+            return self.passed()
+        else:
+            return self.failed(unmet_requirement=result.reason)
+
+    def passed(self):
+        return ChatbotResponseAICheckResult(
+            status=BaseCheckResultStatus.Passed,
+            data=copy.deepcopy(self),
+        )
+
+    def failed(self, invalid_adapter_error: str | None = None, generation_error: str | None = None, unmet_requirement: str | None = None):
+        return ChatbotResponseAICheckResult(
+            status=BaseCheckResultStatus.Failed,
+            data=copy.deepcopy(self),
+            invalid_adapter_error=invalid_adapter_error,
+            generation_error=generation_error,
+            unmet_requirement=unmet_requirement,
+        )
+
+    def skipped(self):
+        return ChatbotResponseAICheckResult(
+            status=BaseCheckResultStatus.Skipped,
+            data=copy.deepcopy(self),
+        )
+
+
+@dataclass(kw_only=True)
+class ChatbotResponseAICheckResult(BaseCheckResult):
+    data: ChatbotResponseAICheck
+    status: BaseCheckResultStatus
+    invalid_adapter_error: str | None = None
+    generation_error: str | None = None
+    unmet_requirement: str | None = None
+
+    def generate_error_messages(self):
+        if self.invalid_adapter_error:
+            return [f"Invalid Adapter Error:\n{self.invalid_adapter_error}"]
+
+        if self.generation_error:
+            return [f"Error while generating response:\n{self.generation_error}"]
+
+        if self.unmet_requirement:
+            return [f"Requirement not met:\n{self.unmet_requirement}"]
+
+        return []
 
 
 class AIContentCheck(BaseModel):
@@ -125,7 +215,7 @@ class AIContentCheck(BaseModel):
     def _exception_message(self, chatbot_response: str, colorize: bool, markdown: bool = False):
         if markdown:
             return (
-                f"chatbot response did not pass AI check:\n\n"
+                f"chatbot response did not pass AI check:\n"
                 f"| **requirement** | The chatbot should {self.requirement} |\n"
                 f"| --------------- | ------------------------------------- |\n"
                 f"|    **response** | {chatbot_response}                    |\n"
@@ -150,3 +240,10 @@ def maybe_colored(colorize: bool, str, **kwargs):
         return colored(str, **kwargs)
     else:
         return str
+
+
+def str_repr(string: str):
+    """
+    @private
+    """
+    return f"{string.__repr__()}"

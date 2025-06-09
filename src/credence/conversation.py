@@ -1,5 +1,6 @@
 import copy
-from dataclasses import dataclass
+import uuid
+from dataclasses import dataclass, field
 from typing import List
 
 from credence.interaction import Interaction
@@ -16,8 +17,8 @@ class Conversation:
     There are 3 interactions supported:
     1. User interactions are used to send messages to your chatbot as a user (`credence.interaction.user.User`).
     2. Chatbot interactions are used to run checks on the expected response from the chatbot (`credence.interaction.chatbot.Chatbot`).
-    3. External interactions act as an escape hatch allowing you to model
-       interactions that take place outside the normal message sending flow (`credence.interaction.external.External`).
+    3. FunctionCall interactions act as an escape hatch allowing you to model
+       interactions that take place outside the normal message sending flow (`credence.interaction.external.FunctionCall`).
 
        This is commonly used for events that happen somewhere else,
        such as user sign-up or payment from your website.
@@ -29,8 +30,12 @@ class Conversation:
 
     title: str
     """A unique title used to identify a conversation."""
+
     interactions: List[Interaction]
     """The sequence of interactions being tested."""
+
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    """A unique id used to identify a conversation."""
 
     @staticmethod
     def nested(name: str, conversation: "Conversation") -> Interaction:

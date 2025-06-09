@@ -1,12 +1,9 @@
+import copy
+import enum
 import re
 from dataclasses import dataclass
-from typing import List, Tuple
 
-from credence.exceptions import ChatbotIndexedException
-from credence.interaction.chatbot.check.ai_content_check import AIContentCheck
-from credence.interaction.chatbot.check.base import BaseCheck
-from credence.message import Message
-from credence.role import Role
+from credence.interaction.chatbot.check.base import BaseCheck, BaseCheckResult, BaseCheckResultStatus
 
 
 @dataclass
@@ -21,180 +18,142 @@ class ChatbotResponseCheck(BaseCheck):
 class Response:
     @staticmethod
     def ai_check(should: str, retries: int = 0):
+        from credence.interaction.chatbot.check.ai import ChatbotResponseAICheck
+
         return ChatbotResponseAICheck(prompt=should, retries=retries)
 
     @staticmethod
     def contains(string: str):
-        return ChatbotResponseContains(string=string)
+        return ChatbotResponseMessageCheck(value=string, operation=Operation.Contains)
 
     @staticmethod
     def not_contains(string: str):
-        return ChatbotResponseNotContain(string=string)
+        return ChatbotResponseMessageCheck(value=string, operation=Operation.NotContains)
 
     @staticmethod
     def equals(string: str):
-        return ChatbotResponseEquals(string=string)
+        return ChatbotResponseMessageCheck(value=string, operation=Operation.Equals)
 
     @staticmethod
     def not_equals(string: str):
-        return ChatbotResponseNotEquals(string=string)
+        return ChatbotResponseMessageCheck(value=string, operation=Operation.NotEquals)
 
     @staticmethod
     def re_match(regexp: str):
         try:
             pattern = re.compile(regexp)
-            return ChatbotResponseRegexMatch(pattern=pattern)
+            return ChatbotResponseMessageCheck(value=pattern, operation=Operation.RegexMatch)
         except Exception as e:
             try:
-                print(e)
                 raise Exception(f"Invalid regex: `{regexp}`") from e
             except Exception as e2:
-                print(e2)
                 return e2
 
 
+class Operation(str, enum.Enum):
+    Equals = "equals"
+    NotEquals = "not_equals"
+    Contains = "contains"
+    NotContains = "not_contains"
+    RegexMatch = "regex_match"
+
+    def should(self):
+        match self:
+            case Operation.Equals:
+                return "should equal"
+            case Operation.NotEquals:
+                return "should not equal"
+            case Operation.Contains:
+                return "should contain"
+            case Operation.NotContains:
+                return "should not contain"
+            case Operation.RegexMatch:
+                return "should match the regex"
+
+    def did_not(self):
+        match self:
+            case Operation.Equals:
+                return "did not equal"
+            case Operation.NotEquals:
+                return "unexpectedly equals"
+            case Operation.Contains:
+                return "did not contain"
+            case Operation.NotContains:
+                return "unexpectedly contains"
+            case Operation.RegexMatch:
+                return "did not match the regex"
+
+
 @dataclass
-class ChatbotResponseAICheck(BaseCheck):
+class ChatbotResponseMessageCheck(ChatbotResponseCheck):
     """
     @private
     """
 
-    prompt: str
-    # Increase the number of retries for brittle tests
-    retries: int = 0
+    value: str
+    operation: Operation
 
     def __str__(self):
-        if self.retries > 0:
-            return f"""Response.ai_check(
-    should={str_repr(self.prompt)},
-    retries={self.retries},
-)""".strip()
-        else:
-            return f"Response.ai_check(should={str_repr(self.prompt)})"
+        if self.operation == Operation.RegexMatch:
+            return f"Response.re_match({str_repr(self.value.pattern)})"
+        return f"Response.{self.operation.value}({str_repr(self.value)})"
 
     def humanize(self):
-        return f"should {self.prompt}"
+        if self.operation == Operation.RegexMatch:
+            return f"{self.operation.should()} `{self.value.pattern}`"
+        return f"{self.operation.should()} `{self.value}`"
 
-    def find_error(self, messages: List[Message], adapter):
-        from credence.adapter import Adapter
+    def to_check_result(self, value: str, skipped: bool = False):
+        if skipped:
+            return self.skipped()
 
-        if not isinstance(adapter, Adapter):
-            raise Exception(f"{adapter} is not a valid Adapter")
+        match self.operation:
+            case Operation.Equals:
+                if self.value != value:
+                    return self.failed()
+            case Operation.NotEquals:
+                if self.value == value:
+                    return self.failed()
+            case Operation.Contains:
+                if self.value not in value:
+                    return self.failed()
+            case Operation.NotContains:
+                if self.value in value:
+                    return self.failed()
+            case Operation.RegexMatch:
+                if re.search(self.value, value) is None:
+                    return self.failed()
+        return self.passed()
 
-        result = AIContentCheck.check_requirement(
-            client=adapter.get_client(),
-            model_name=adapter.model_name(),
-            messages=messages,
-            requirement=self.prompt,
+    def passed(self):
+        return ChatbotResponseMessageCheckResult(
+            status=BaseCheckResultStatus.Passed,
+            data=copy.deepcopy(self),
         )
 
-        last_assistant_message = (0, "None")
-        for message in reversed(messages):
-            if message.role == Role.Chatbot:
-                last_assistant_message = (message.index, message.body)
-                break
+    def failed(self):
+        return ChatbotResponseMessageCheckResult(
+            status=BaseCheckResultStatus.Failed,
+            data=copy.deepcopy(self),
+        )
 
-        return result.generate_error(chatbot_response=last_assistant_message)
-
-
-@dataclass
-class ChatbotResponseContains(ChatbotResponseCheck):
-    """
-    @private
-    """
-
-    string: str
-
-    def __str__(self):
-        return f"Response.contains({str_repr(self.string)})"
-
-    def humanize(self):
-        return f"response should contain `{str_repr(self.string)}`"
-
-    def find_error(self, value: Tuple[int, str]):
-        value = prepare_value(value)
-        if self.string not in value[1]:
-            return ChatbotIndexedException(value[0], f"Expected chatbot response to contain `{str_repr(self.string)}`, but found `{str_repr(value[1])}`")
+    def skipped(self):
+        return ChatbotResponseMessageCheckResult(
+            status=BaseCheckResultStatus.Skipped,
+            data=copy.deepcopy(self),
+        )
 
 
-@dataclass
-class ChatbotResponseNotContain(ChatbotResponseCheck):
-    """
-    @private
-    """
+@dataclass(kw_only=True)
+class ChatbotResponseMessageCheckResult(BaseCheckResult):
+    data: ChatbotResponseMessageCheck
+    status: BaseCheckResultStatus
 
-    string: str
+    def generate_error_messages(self):
+        if self.status == BaseCheckResultStatus.Failed:
+            return [f"Chatbot response did not meet requirement:\n{self.data.humanize()}"]
 
-    def __str__(self):
-        return f'Response.not_contain("{str_repr(self.string)}")'
-
-    def humanize(self):
-        return f"response should not contain `{str_repr(self.string)}`"
-
-    def find_error(self, value: Tuple[int, str]):
-        value = prepare_value(value)
-        if self.string in value[1]:
-            return ChatbotIndexedException(value[0], f"Expected chatbot response to not contain `{str_repr(self.string)}`, but found `{str_repr(value[1])}`")
-
-
-@dataclass
-class ChatbotResponseEquals(ChatbotResponseCheck):
-    """
-    @private
-    """
-
-    string: str
-
-    def __str__(self):
-        return f"Response.equals({str_repr(self.string)})"
-
-    def humanize(self):
-        return f"should respond with `{str_repr(self.string)}`"
-
-    def find_error(self, value: Tuple[int, str]):
-        value = prepare_value(value)
-        if self.string != value[1]:
-            return ChatbotIndexedException(value[0], f"Expected chatbot response to equal `{str_repr(self.string)}`, but found `{str_repr(value[1])}`")
-
-
-@dataclass
-class ChatbotResponseNotEquals(ChatbotResponseCheck):
-    """
-    @private
-    """
-
-    string: str
-
-    def __str__(self):
-        return f'Response.not_equals("{str_repr(self.string)}")'
-
-    def humanize(self):
-        return f"response should not be `{str_repr(self.string)}`"
-
-    def find_error(self, value: Tuple[int, str]):
-        value = prepare_value(value)
-        if self.string == value[1]:
-            return ChatbotIndexedException(value[0], f"Expected chatbot response to not equal `{self.string}`, but found `{str_repr(value[1])}`")
-
-
-@dataclass
-class ChatbotResponseRegexMatch(ChatbotResponseCheck):
-    """
-    @private
-    """
-
-    pattern: re.Pattern
-
-    def __str__(self):
-        return f'Response.re_match("{self.pattern.pattern}")'
-
-    def humanize(self):
-        return f"should match `{self.pattern.pattern}`"
-
-    def find_error(self, value):
-        value = prepare_value(value)
-        if re.search(self.pattern, value[1]) is None:
-            return ChatbotIndexedException(value[0], f"Expected chatbot response to match the regex `{self.pattern.pattern}`, but found `{str_repr(value[1])}`")
+        return []
 
 
 def str_repr(string: str):
@@ -202,12 +161,3 @@ def str_repr(string: str):
     @private
     """
     return f"{string.__repr__()}"
-
-
-def prepare_value(value: str | Tuple[int, str]):
-    """
-    @private
-    """
-    if isinstance(value, str):
-        value = (0, value)
-    return value

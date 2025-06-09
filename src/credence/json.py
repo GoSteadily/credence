@@ -4,7 +4,7 @@ from credence.conversation import Conversation
 from credence.interaction.chatbot import Chatbot, ChatbotIgnoresMessage
 from credence.interaction.chatbot.check.metadata import Metadata
 from credence.interaction.chatbot.check.response import Response
-from credence.interaction.external import External
+from credence.interaction.function_call import FunctionCall
 from credence.interaction.user import User
 
 
@@ -46,7 +46,12 @@ def _decode_interaction(data, conversation_lookup):
 
     elif t == "function_call":
         args = {arg["name"]: _to_arg_value(arg) for arg in data["function_call"]["args"]}
-        return External(data["function_call"]["name"], args)
+
+        return FunctionCall(
+            name=data["function_call"]["name"],
+            args=args,
+            function_id=data["function_call"]["function_id"],
+        )
 
     raise Exception(f"Unsupported interaction type: {t}")
 
@@ -64,7 +69,11 @@ def decode_conversations(data):
 
             try:
                 # Check for unresolved nested dependencies
-                nested_ids = [i["nested_conversation"]["conversation_id"] for i in entry["interactions"] if i["type"] == "nested_conversation"]
+                nested_ids = []
+                for i in entry["interactions"]:
+                    if i["type"] == "nested_conversation":
+                        nested_ids.append(i["nested_conversation"]["conversation_id"])
+
                 if all(nid in decoded for nid in nested_ids):
                     conv = Conversation(title=entry["name"], interactions=[_decode_interaction(i, decoded) for i in entry["interactions"]])
                     decoded[cid] = conv

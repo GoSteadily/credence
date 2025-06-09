@@ -96,7 +96,7 @@ import instructor
 import openai
 import pytest
 
-# Let's assume you have a chatbot module that 
+# Let's assume you have a chatbot module that
 # exposes a process_message function
 from my_app import chatbot
 
@@ -104,7 +104,7 @@ from credence.adapter import Adapter
 from credence.conversation import Conversation
 from credence.interaction.chatbot import Chatbot
 from credence.interaction.chatbot.check.response import Response
-from credence.interaction.external import External
+from credence.interaction.external import FunctionCall
 from credence.interaction.user import User
 
 
@@ -120,16 +120,17 @@ class MyChatbotAdapter(Adapter):
         return os.environ.get("MODEL_NAME", "gpt-4.1-mini")
 
     def handle_message(self, message: str) -> str | None:
-        # If your chatbot dispatches responses instead of returning 
+        # If your chatbot dispatches responses instead of returning
         # a string, look at `Adapter.handle_message`'s documentation
         return chatbot.process_message(message)
 ```
 
 > [!NOTE]
 > credence works best when used for integration tests.
-> 
+>
 > If you have an endpoint function that receives messages from a provider, then your `handle_message` function should mirror that function.
 > For example, if this is how you handle messages from a provider like twilio:
+>
 > ```python
 > @app.post("/webhook/twilio/sms")
 > def handle_twilio_sms():
@@ -138,14 +139,15 @@ class MyChatbotAdapter(Adapter):
 > ```
 >
 > then your handle_message function should be fairly similar:
+>
 > ```python
 > class MyChatbotAdapter(Adapter):
 >   ...
->   
+>
 >   def handle_message(self, message: str) -> str | None:
 >       incoming_message = ParsedMessage(
->         body=message, 
->         phone_number=self.context["phone_number"], 
+>         body=message,
+>         phone_number=self.context["phone_number"],
 >       )
 >       return chatbot.handle_webhook_message(incoming_message)
 > ```
@@ -174,6 +176,7 @@ def conversations():
         )
     ]
 ```
+
 </details>
 
 <br>
@@ -199,6 +202,7 @@ def test_chatbot(conversation):
     result.to_stdout()
     assert result.errors == [], f"Found {len(result.errors)} error(s) when evaluating the test"
 ```
+
 </details>
 
 <br>
@@ -218,13 +222,11 @@ To run parallel test use `pytest -n auto -s` from your terminal.
 
 # Usage Examples
 
-
 <details>
-<summary><h3 style="display: inline;">External interactions / Escape hatches</h3></summary>
+<summary><h3 style="display: inline;">FunctionCall interactions / Escape hatches</h3></summary>
 
 A conversation might depend on some external interactions.
-For example, a user may need to be registered before they can interact with the chatbot. You can use `External` interactions to run arbitrary code at any point in a conversation:
-
+For example, a user may need to be registered before they can interact with the chatbot. You can use `FunctionCall` interactions to run arbitrary code at any point in a conversation:
 
 ```python
 from credence.adapter import Adapter
@@ -245,7 +247,7 @@ conversation = Conversation(
         title: "Paid users have access to premium flow",
         interactions: [
             # Use the register_and_upgrade function in a conversation
-            External("register_and_upgrade", {
+            FunctionCall("register_and_upgrade", {
                 "user": "John",
                 "phone_number": "+12345678901",
             }),
@@ -297,6 +299,7 @@ ambiguous_location_conversation = Conversation(
     ],
 )
 ```
+
 </details>
 
 <br>
@@ -306,7 +309,7 @@ ambiguous_location_conversation = Conversation(
 
 We provide a fairly simple prompt for user message generation. For more elaborate use cases, such as when supporting different user profiles, you can override the prompt using `credence.adapter.Adapter.user_simulator_system_prompt`.
 
-For example, if you were testing your chatbot's ability to escalate angry users 
+For example, if you were testing your chatbot's ability to escalate angry users
 to a human customer service agent, you might want to support an "angry user" profile.
 
 ```python
@@ -325,6 +328,7 @@ class MyChatbotAdapter(Adapter):
                 return None
 
 ```
+
 </details>
 
 <br>
@@ -334,7 +338,6 @@ class MyChatbotAdapter(Adapter):
 # API Documentation
 
 Complete documentation can be found at: https://gosteadily.github.io/credence/credence.html
-
 
 # Licensing
 

@@ -1,0 +1,479 @@
+[
+  {
+    "id": "ce9ab790-cecf-44ea-a355-665d327a9a46",
+    "name": "Respond to user greetings",
+    "inserted_at": "2025-05-30T16:39:59Z",
+    "updated_at": "2025-05-30T22:19:31Z",
+    "interactions": [
+      {
+        "id": "06bec76f-1c96-421d-b5ee-3e689447616d",
+        "index": 0,
+        "type": "user_message",
+        "user_message": {
+          "id": "89bda49d-2175-4c39-9d79-c211e0b36913",
+          "generated": false,
+          "message": "Hi",
+          "inserted_at": "2025-05-30T22:19:31Z",
+          "updated_at": "2025-05-30T22:19:31Z"
+        },
+        "inserted_at": "2025-05-30T22:19:31Z",
+        "updated_at": "2025-05-30T22:19:31Z"
+      },
+      {
+        "id": "48475899-e724-4d1a-9df8-fb938f960c82",
+        "index": 1,
+        "type": "chatbot_response",
+        "inserted_at": "2025-05-30T22:19:31Z",
+        "updated_at": "2025-05-30T22:19:31Z",
+        "chatbot_response": {
+          "id": "eaec0135-5cd7-406f-bcef-6c7097b4f0cb",
+          "checks": [
+            {
+              "id": "3f941491-fe9e-4c95-9a0b-74f61c015fbe",
+              "index": 0,
+              "type": "ai_check",
+              "ai_check": {
+                "id": "9257c3ca-e782-4240-9964-1d281bbc6971",
+                "prompt": "greet the user"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "interaction_count": 2
+  },
+  {
+    "id": "ba3bb00b-5fa4-4f5c-84a4-05415eea734e",
+    "name": "Answer math questions",
+    "inserted_at": "2025-05-30T19:46:53Z",
+    "updated_at": "2025-06-03T14:19:44Z",
+    "interactions": [
+      {
+        "id": "1b2f9271-6e23-4a9c-a76f-c6f98e59717e",
+        "index": 0,
+        "type": "user_message",
+        "user_message": {
+          "id": "a352e134-a62b-4d20-8cfc-5f32a3947b7e",
+          "generated": false,
+          "message": "math:1 + 1",
+          "inserted_at": "2025-06-03T14:19:44Z",
+          "updated_at": "2025-06-03T14:19:44Z"
+        },
+        "inserted_at": "2025-06-03T14:19:44Z",
+        "updated_at": "2025-06-03T14:19:44Z"
+      },
+      {
+        "id": "2c4b48f9-5f93-404b-bfcb-44150e3b479a",
+        "index": 1,
+        "type": "chatbot_response",
+        "inserted_at": "2025-06-03T14:19:44Z",
+        "updated_at": "2025-06-03T14:19:44Z",
+        "chatbot_response": {
+          "id": "b2296b37-2226-478b-9825-a0b5ce06bc6c",
+          "checks": [
+            {
+              "id": "6599350e-97d9-48ad-be18-238d55e74e46",
+              "index": 0,
+              "type": "message_check",
+              "message_check": {
+                "id": "b20a2cfd-18c3-401d-9664-02ea4e3bc3cd",
+                "op": "equals",
+                "value": "2"
+              }
+            },
+            {
+              "id": "4b4081d6-080f-41d1-ae0a-40e33dd9d069",
+              "index": 1,
+              "type": "metadata_check",
+              "metadata_check": {
+                "id": "eb95a1c4-a0c5-450e-93c6-bf61993d48eb",
+                "op": "equals",
+                "key": "agent",
+                "value": "math_agent"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "interaction_count": 2
+  },
+  {
+    "id": "fe49bdda-df3a-44af-8234-1c132179e526",
+    "name": "Ignore fruit related messages especially banana questions",
+    "inserted_at": "2025-05-30T20:23:20Z",
+    "updated_at": "2025-06-04T21:04:47Z",
+    "interactions": [
+      {
+        "id": "5e96bdb4-7442-439d-a249-6baff37d0089",
+        "index": 0,
+        "type": "user_message",
+        "user_message": {
+          "id": "cc387766-3cf2-4747-8a1f-1cd317ede2ff",
+          "generated": false,
+          "message": "Banana",
+          "inserted_at": "2025-06-04T21:04:48Z",
+          "updated_at": "2025-06-04T21:04:48Z"
+        },
+        "inserted_at": "2025-06-04T21:04:48Z",
+        "updated_at": "2025-06-04T21:04:48Z"
+      },
+      {
+        "id": "83f35e59-a304-4f7e-a504-3c0274c8f95c",
+        "index": 1,
+        "type": "chatbot_ignore",
+        "inserted_at": "2025-06-04T21:04:48Z",
+        "updated_at": "2025-06-04T21:04:48Z",
+        "chatbot_ignore": {
+          "id": "b8ae906f-766b-4976-badc-41497e48176a",
+          "inserted_at": "2025-06-04T21:04:48Z",
+          "updated_at": "2025-06-04T21:04:48Z"
+        }
+      },
+      {
+        "id": "a83338f5-7b4e-426d-a66d-0b3c16773066",
+        "index": 2,
+        "type": "chatbot_ignore",
+        "inserted_at": "2025-06-04T21:04:48Z",
+        "updated_at": "2025-06-04T21:04:48Z",
+        "chatbot_ignore": {
+          "id": "2d024854-dcf6-40d3-80d9-2f633eab1533",
+          "inserted_at": "2025-06-04T21:04:48Z",
+          "updated_at": "2025-06-04T21:04:48Z"
+        }
+      },
+      {
+        "id": "c0e68764-3249-4743-a8d7-188976ba0d1c",
+        "index": 3,
+        "type": "chatbot_ignore",
+        "inserted_at": "2025-06-04T21:04:48Z",
+        "updated_at": "2025-06-04T21:04:48Z",
+        "chatbot_ignore": {
+          "id": "13fdd6d9-66c1-43b2-8b2c-545fa3e304c6",
+          "inserted_at": "2025-06-04T21:04:48Z",
+          "updated_at": "2025-06-04T21:04:48Z"
+        }
+      }
+    ],
+    "interaction_count": 4
+  },
+  {
+    "id": "a1888473-8d4c-4a0d-85d1-e70b4041c497",
+    "name": "Nymble Registration Flow",
+    "inserted_at": "2025-05-31T08:17:21Z",
+    "updated_at": "2025-06-03T20:02:27Z",
+    "interactions": [
+      {
+        "id": "02816e41-62ac-4a5f-b8c2-0912efacae6a",
+        "index": 1,
+        "type": "chatbot_response",
+        "inserted_at": "2025-06-03T20:02:27Z",
+        "updated_at": "2025-06-03T20:02:27Z",
+        "chatbot_response": {
+          "id": "87173ced-a5f5-41ad-a8f9-3d3e50c447ae",
+          "checks": [
+            {
+              "id": "b1dbfd7e-59e5-477e-afad-90340c9ea261",
+              "index": 0,
+              "type": "ai_check",
+              "ai_check": {
+                "id": "5ef1d766-fe7e-4f98-ad8b-0f183b03f9b4",
+                "prompt": "ask user to agree to terms and conditions"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "3d309ff9-54c9-4d5c-a0a4-b62cb1543fc8",
+        "index": 2,
+        "type": "user_message",
+        "user_message": {
+          "id": "76e9bea0-0663-475b-b0fc-684f647b5450",
+          "generated": false,
+          "message": "I agree",
+          "inserted_at": "2025-06-03T20:02:27Z",
+          "updated_at": "2025-06-03T20:02:27Z"
+        },
+        "inserted_at": "2025-06-03T20:02:27Z",
+        "updated_at": "2025-06-03T20:02:27Z"
+      },
+      {
+        "id": "6b75dcc4-db90-401c-b894-c35c2d7bd49a",
+        "index": 3,
+        "type": "chatbot_response",
+        "inserted_at": "2025-06-03T20:02:27Z",
+        "updated_at": "2025-06-03T20:02:27Z",
+        "chatbot_response": {
+          "id": "c9b00153-aeaf-4e3b-b375-2342c99c0761",
+          "checks": [
+            {
+              "id": "10ae126b-ae0f-4891-8476-26a419046443",
+              "index": 0,
+              "type": "ai_check",
+              "ai_check": {
+                "id": "2318537f-53ba-4d35-80be-3baaafc0b8a5",
+                "prompt": "greet user and introduce themself as nymble"
+              }
+            },
+            {
+              "id": "bf38d82f-cdbb-46a3-9c3e-10ef160287ea",
+              "index": 1,
+              "type": "ai_check",
+              "ai_check": {
+                "id": "d41f13e3-8b8e-4c1d-993b-c6d3b39cca4e",
+                "prompt": "ask user if they are on any GLP medication"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "3aa2cd3d-6f42-4107-b47f-46a581b85a18",
+        "index": 4,
+        "type": "chatbot_response",
+        "inserted_at": "2025-06-03T20:02:27Z",
+        "updated_at": "2025-06-03T20:02:27Z",
+        "chatbot_response": {
+          "id": "cb0654e3-4286-42e1-9ecc-6fac0573231b",
+          "checks": [
+            {
+              "id": "ca45891d-fea3-4da1-a2f6-e1ebf83fa3b9",
+              "index": 0,
+              "type": "message_check",
+              "message_check": {
+                "id": "2743c042-b904-4e60-b55f-2e076586820a",
+                "op": "contains",
+                "value": ".vcf"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "98fc1c87-a8e5-4108-9894-6aec68059adb",
+        "index": 5,
+        "type": "user_message",
+        "user_message": {
+          "id": "9198f575-a305-4bfe-b44b-0b06078f17e6",
+          "generated": false,
+          "message": "Hi",
+          "inserted_at": "2025-06-03T20:02:27Z",
+          "updated_at": "2025-06-03T20:02:27Z"
+        },
+        "inserted_at": "2025-06-03T20:02:27Z",
+        "updated_at": "2025-06-03T20:02:27Z"
+      },
+      {
+        "id": "00d62099-e325-4527-9ec9-deaa6907a769",
+        "index": 6,
+        "type": "chatbot_response",
+        "inserted_at": "2025-06-03T20:02:27Z",
+        "updated_at": "2025-06-03T20:02:27Z",
+        "chatbot_response": {
+          "id": "729d3c60-b88d-44f5-931d-2b62bc62f0b4",
+          "checks": []
+        }
+      }
+    ],
+    "interaction_count": 6
+  },
+  {
+    "id": "dfb7d074-6cc4-4e10-9c19-38ce88015125",
+    "name": "Nested",
+    "inserted_at": "2025-06-03T14:00:12Z",
+    "updated_at": "2025-06-03T17:20:21Z",
+    "interactions": [
+      {
+        "id": "946289cd-9201-47fa-91b1-9345a572837b",
+        "index": 0,
+        "type": "nested_conversation",
+        "inserted_at": "2025-06-03T17:20:21Z",
+        "updated_at": "2025-06-03T17:20:21Z",
+        "nested_conversation": {
+          "id": "8227e381-2cb7-4079-8e9a-58c2af9c53d9",
+          "conversation_id": "a1888473-8d4c-4a0d-85d1-e70b4041c497"
+        }
+      },
+      {
+        "id": "cffdb376-af0e-4b68-af1a-c9d1acab7392",
+        "index": 1,
+        "type": "chatbot_response",
+        "inserted_at": "2025-06-03T17:20:21Z",
+        "updated_at": "2025-06-03T17:20:21Z",
+        "chatbot_response": {
+          "id": "9fcade50-b740-45e2-b6af-0bb040901b85",
+          "checks": [
+            {
+              "id": "df0c23ce-eb0b-469a-affd-b486046850cc",
+              "index": 0,
+              "type": "ai_check",
+              "ai_check": {
+                "id": "1e10e7fb-603e-4c17-b54b-77b40d0dc8d6",
+                "prompt": "ask user about side effects"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "interaction_count": 2
+  },
+  {
+    "id": "69b3dabc-862c-4d7e-8cbd-109a13ac1808",
+    "name": "Register",
+    "inserted_at": "2025-06-04T11:44:59Z",
+    "updated_at": "2025-06-04T11:44:59Z",
+    "interactions": [
+      {
+        "id": "5dd347c1-7685-4604-93f7-67fc67b415c5",
+        "index": 0,
+        "type": "function_call",
+        "inserted_at": "2025-06-04T11:44:59Z",
+        "updated_at": "2025-06-04T11:44:59Z",
+        "function_call": {
+          "args": [
+            {
+              "name": "name",
+              "type": "string",
+              "value": "a"
+            },
+            {
+              "name": "phone_number",
+              "type": "string",
+              "value": "b"
+            },
+            {
+              "name": "age",
+              "type": "number",
+              "value": "1"
+            }
+          ],
+          "id": "22dfa73c-642e-44fe-8382-447a8e614a57",
+          "name": "register_user",
+          "function_id": "e67d16c5-33e2-4741-bd22-1cf8da22ff13"
+        }
+      }
+    ],
+    "interaction_count": 1
+  },
+  {
+    "id": "86fe4260-43f8-4405-92fc-ab630220d69d",
+    "name": "Function Tests",
+    "inserted_at": "2025-06-04T11:52:18Z",
+    "updated_at": "2025-06-04T14:18:40Z",
+    "interactions": [
+      {
+        "id": "5ba383bf-3943-4e91-b44d-94cb70c1a492",
+        "index": 0,
+        "type": "function_call",
+        "inserted_at": "2025-06-04T14:18:40Z",
+        "updated_at": "2025-06-04T14:18:40Z",
+        "function_call": {
+          "args": [
+            {
+              "name": "sms_enrolment_message",
+              "type": "string",
+              "value": "Hi, welcome to Wylo"
+            },
+            {
+              "name": "whatsapp_enrolment_template",
+              "type": "string",
+              "value": "WYLO_TEMPLATE"
+            },
+            {
+              "name": "welcome_message",
+              "type": "string",
+              "value": "Welcome onboard with Wylo"
+            }
+          ],
+          "id": "f39fc2aa-4743-4f63-8489-fb22e54d001b",
+          "name": "create_customer",
+          "function_id": "448de9ee-1011-4ae7-b564-cc2955ad6846"
+        }
+      },
+      {
+        "id": "66ab4631-5008-4dd6-a6ba-b3eb35a6cf46",
+        "index": 1,
+        "type": "function_call",
+        "inserted_at": "2025-06-04T14:18:40Z",
+        "updated_at": "2025-06-04T14:18:40Z",
+        "function_call": {
+          "args": [
+            {
+              "name": "name",
+              "type": "string",
+              "value": "Hi, welcome to Wylo"
+            },
+            {
+              "name": "phone_number",
+              "type": "string",
+              "value": "WYLO_TEMPLATE"
+            },
+            {
+              "name": "age",
+              "type": "number",
+              "value": "54"
+            }
+          ],
+          "id": "89cbfebd-0e23-4e12-aa05-1e5329b2b1d9",
+          "name": "register_user",
+          "function_id": "e67d16c5-33e2-4741-bd22-1cf8da22ff13"
+        }
+      },
+      {
+        "id": "32fedea7-d008-4e55-80e0-bf39999adef3",
+        "index": 2,
+        "type": "nested_conversation",
+        "inserted_at": "2025-06-04T14:18:40Z",
+        "updated_at": "2025-06-04T14:18:40Z",
+        "nested_conversation": {
+          "id": "21b55d8a-ce40-48b2-ab17-a335a47a00ac",
+          "conversation_id": "fe49bdda-df3a-44af-8234-1c132179e526"
+        }
+      }
+    ],
+    "interaction_count": 3
+  },
+  {
+    "id": "57e1af21-7e81-4293-b6c9-869b04cbf3a7",
+    "name": "bbbbb",
+    "inserted_at": "2025-06-04T20:30:55Z",
+    "updated_at": "2025-06-04T20:30:55Z",
+    "interactions": [
+      {
+        "id": "7fff51d0-0c55-4c5c-922f-e2b8c691b0c2",
+        "index": 0,
+        "type": "nested_conversation",
+        "inserted_at": "2025-06-04T20:30:55Z",
+        "updated_at": "2025-06-04T20:30:55Z",
+        "nested_conversation": {
+          "id": "b0f9efc9-ff31-4c0a-8062-377420787670",
+          "conversation_id": "fe49bdda-df3a-44af-8234-1c132179e526"
+        }
+      }
+    ],
+    "interaction_count": 1
+  },
+  {
+    "id": "0ae3afc1-f78e-496a-a788-8ced797b5c0f",
+    "name": "ref vbbbb",
+    "inserted_at": "2025-06-04T21:16:56Z",
+    "updated_at": "2025-06-04T21:16:56Z",
+    "interactions": [
+      {
+        "id": "5501b60f-8b09-4d88-ab17-9bf2910a4a7d",
+        "index": 0,
+        "type": "nested_conversation",
+        "inserted_at": "2025-06-04T21:16:56Z",
+        "updated_at": "2025-06-04T21:16:56Z",
+        "nested_conversation": {
+          "id": "1f4c88cd-0c77-485a-8023-c19c48bc48e5",
+          "conversation_id": "57e1af21-7e81-4293-b6c9-869b04cbf3a7"
+        }
+      }
+    ],
+    "interaction_count": 1
+  }
+]

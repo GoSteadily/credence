@@ -1,6 +1,5 @@
 import os
 import tempfile
-from pathlib import Path
 from textwrap import dedent
 from typing import List, Tuple
 
@@ -12,10 +11,11 @@ from support.math_chatbot import MathChatbot
 from credence.adapter import Adapter, Role
 from credence.checker import LLMChecker
 from credence.conversation import Conversation
+from credence.interaction import InteractionResultStatus
 from credence.interaction.chatbot import Chatbot
 from credence.interaction.chatbot.check.metadata import Metadata
 from credence.interaction.chatbot.check.response import Response
-from credence.interaction.external import External
+from credence.interaction.function_call import FunctionCall
 from credence.interaction.user import User
 from credence.json import decode_conversations, download
 from credence.message import Message
@@ -66,7 +66,7 @@ def conversations():
     user_registration_flow = Conversation(
         title="we greet registered users by name",
         interactions=[
-            External("register_user", {"name": "John"}),
+            FunctionCall("register_user", {"name": "John"}),
             User.generated("Say hello and introduce yourself as John"),
             Chatbot.responds(
                 [
@@ -85,7 +85,7 @@ def conversations():
     failing_test = Conversation(
         title="Failing test",
         interactions=[
-            External("register_user", {"name": "John"}),
+            FunctionCall("register_user", {"name": "John"}),
             User.generated("Say hello and introduce yourself as John"),
             Chatbot.responds(
                 [
@@ -104,7 +104,7 @@ def conversations():
     failing_test2 = Conversation(
         title="Failing test 2",
         interactions=[
-            External("register_user", {"name": "John"}),
+            FunctionCall("register_user", {"name": "John"}),
             User.generated("Say hello and introduce yourself as John"),
             Chatbot.responds(
                 [
@@ -117,6 +117,23 @@ def conversations():
     return [
         (False, failing_test),
         (False, failing_test2),
+        (
+            False,
+            Conversation(
+                title="we handle failing nested flows",
+                interactions=[
+                    Conversation.nested("Failing Flow", failing_test),
+                    User.message("math:1 + 1"),
+                    Chatbot.responds(
+                        [
+                            Response.equals("2"),
+                            Metadata("chatbot.handler").equals("math"),
+                            Metadata("chatbot.math.result").equals(2),
+                        ]
+                    ),
+                ],
+            ),
+        ),
         (True, user_registration_flow),
         (
             True,
@@ -194,17 +211,18 @@ def test_maa(conversation):
     adapter = MathChatbotAdapter()
 
     result = adapter.test(conversation)
+    print(result)
     result.to_stdout()
-    Path("tmp/test_cases").mkdir(parents=True, exist_ok=True)
-    passed = "p" if result.errors == [] else "f"
+    # Path("tmp/test_cases").mkdir(parents=True, exist_ok=True)
+    # passed = "p" if result.errors == [] else "f"
 
-    with Path(f"tmp/test_cases/{index_str(index)}. {conversation.title}.{passed}.case.md").open("w") as f:
-        f.write(result.to_markdown(index=index))
+    # with Path(f"tmp/test_cases/{index_str(index)}. {conversation.title}.{passed}.case.md").open("w") as f:
+    #     f.write(result.to_markdown(index=index))
 
     if should_pass:
-        assert result.errors == [], f"Found {len(result.errors)} error(s) when evaluating the test"
+        assert not result.failed, "Failed when evaluating the test"
     else:
-        assert result.errors != [], "Found 0 error(s) when evaluating a test that should fail"
+        assert result.failed, "Passed when evaluating a test that should fail"
 
 
 def test_assert_that():
@@ -226,56 +244,70 @@ def test_assert_that():
 
 def test_checks():
     # METADATA
-    assert Metadata("key").contains(string="bc").find_error("abcd") is None
-    assert Metadata("key").contains(string="bc").find_error("def") is not None
+    assert Metadata("key").contains(string="bc").to_result("abcd").status == InteractionResultStatus.Passed
+    assert Metadata("key").contains(string="bc").to_result("def").status == InteractionResultStatus.Failed
 
-    assert Metadata("key").equals(string="abc").find_error("abc") is None
-    assert Metadata("key").equals(string="abc").find_error("def") is not None
+    assert Metadata("key").equals(string="abc").to_result("abc").status == InteractionResultStatus.Passed
+    assert Metadata("key").equals(string="abc").to_result("def").status == InteractionResultStatus.Failed
 
-    assert Metadata("key").not_equals(string="abc").find_error("abc") is not None
-    assert Metadata("key").not_equals(string="abc").find_error("def") is None
+    assert Metadata("key").not_equals(string="abc").to_result("abc").status == InteractionResultStatus.Failed
+    assert Metadata("key").not_equals(string="abc").to_result("def").status == InteractionResultStatus.Passed
 
-    assert Metadata("key").re_match("^abc$").find_error("abc") is None
-    assert Metadata("key").re_match("^abc").find_error("abcd") is None
-    assert Metadata("key").re_match("^abc$").find_error("abcd") is not None
+    assert Metadata("key").re_match("^abc$").to_result("abc").status == InteractionResultStatus.Passed
+    assert Metadata("key").re_match("^abc").to_result("abcd").status == InteractionResultStatus.Passed
+    assert Metadata("key").re_match("^abc$").to_result("abcd").status == InteractionResultStatus.Failed
 
-    assert Metadata("key").re_match("^abc$").find_error("abc") is None
-    assert Metadata("key").re_match("^abc").find_error("abcd") is None
-    assert Metadata("key").re_match("^abc$").find_error("abcd") is not None
+    assert Metadata("key").re_match("^abc$").to_result("abc").status == InteractionResultStatus.Passed
+    assert Metadata("key").re_match("^abc").to_result("abcd").status == InteractionResultStatus.Passed
+    assert Metadata("key").re_match("^abc$").to_result("abcd").status == InteractionResultStatus.Failed
 
-    assert Metadata("key").one_of([1, 2, 3]).find_error(1) is None
-    assert Metadata("key").one_of([1, 2, 3]).find_error("1") is None
+    assert Metadata("key").one_of([1, 2, 3]).to_result(1).status == InteractionResultStatus.Passed
+    assert Metadata("key").one_of([1, 2, 3]).to_result("1").status == InteractionResultStatus.Passed
 
     # RESPONSE
 
-    assert Response.contains(string="bc").find_error((0, "abcd")) is None
-    assert Response.contains(string="bc").find_error((0, "def")) is not None
+    assert Response.contains(string="bc").to_result("abcd").status == InteractionResultStatus.Passed
+    assert Response.contains(string="bc").to_result("def").status == InteractionResultStatus.Failed
 
-    assert Response.equals(string="abc").find_error((0, "abc")) is None
-    assert Response.equals(string="abc").find_error((0, "def")) is not None
+    assert Response.equals(string="abc").to_result("abc").status == InteractionResultStatus.Passed
+    assert Response.equals(string="abc").to_result("def").status == InteractionResultStatus.Failed
 
-    assert Response.not_equals(string="abc").find_error((0, "abc")) is not None
-    assert Response.not_equals(string="abc").find_error((0, "def")) is None
+    assert Response.not_equals(string="abc").to_result("abc").status == InteractionResultStatus.Failed
+    assert Response.not_equals(string="abc").to_result("def").status == InteractionResultStatus.Passed
 
-    assert Response.re_match("^abc$").find_error((0, "abc")) is None
-    assert Response.re_match("^abc").find_error((0, "abcd")) is None
-    assert Response.re_match("^abc$").find_error((0, "abcd")) is not None
+    assert Response.re_match("^abc$").to_result("abc").status == InteractionResultStatus.Passed
+    assert Response.re_match("^abc").to_result("abcd").status == InteractionResultStatus.Passed
+    assert Response.re_match("^abc$").to_result("abcd").status == InteractionResultStatus.Failed
 
     adapter = MathChatbotAdapter()
     try:
         assert (
-            Response.ai_check(should="give a greeting").find_error(
+            Response.ai_check(should="give a greeting")
+            .to_result(
                 messages=[Message(role=Role.Chatbot, body="Hi there")],
                 adapter=adapter,
             )
-            is None
+            .status
+            == InteractionResultStatus.Passed
         )
         assert (
-            Response.ai_check(should="give a greeting").find_error(
+            Response.ai_check(should="give a greeting")
+            .to_result(
                 messages=[Message(role=Role.Chatbot, body="I like fish")],
                 adapter=adapter,
             )
-            is not None
+            .status
+            == InteractionResultStatus.Failed
+        )
+        assert (
+            Response.ai_check(should="give a greeting")
+            .to_result(
+                messages=[Message(role=Role.Chatbot, body="I like fish")],
+                adapter=adapter,
+                skipped=True,
+            )
+            .status
+            == InteractionResultStatus.Skipped
         )
 
     except instructor.exceptions.InstructorRetryException:
@@ -295,16 +327,16 @@ Response.ai_check(
     )
     assert str(Response.contains(string="there")) == "Response.contains('there')"
     assert str(Response.equals(string="there")) == "Response.equals('there')"
-    assert str(Response.re_match("there")) == 'Response.re_match("there")'
+    assert str(Response.re_match("there")) == "Response.re_match('there')"
 
-    assert str(Metadata("key").equals("there")) == 'Metadata("key").equals("there")'
-    assert str(Metadata("key").not_equals("there")) == 'Metadata("key").not_equals("there")'
-    assert str(Metadata("key").contains("there")) == 'Metadata("key").contains("there")'
-    assert str(Metadata("key").re_match("there")) == 'Metadata("key").re_match("there")'
-    assert str(Metadata("key").one_of([1, 2, 3])) == 'Metadata("key").one_of([1, 2, 3])'
+    assert str(Metadata("key").equals("there")) == "Metadata('key').equals('there')"
+    assert str(Metadata("key").not_equals("there")) == "Metadata('key').not_equals('there')"
+    assert str(Metadata("key").contains("there")) == "Metadata('key').contains('there')"
+    assert str(Metadata("key").re_match("there")) == "Metadata('key').re_match('there')"
+    assert str(Metadata("key").one_of([1, 2, 3])) == "Metadata('key').one_of([1, 2, 3])"
 
-    assert str(External("register_user", {"name": "John"})) == "External('register_user', {'name': 'John'})"
-    assert str(External("register_user", {})) == "External('register_user')"
+    assert str(FunctionCall("register_user", {"name": "John"})) == "FunctionCall('register_user', {'name': 'John'})"
+    assert str(FunctionCall("register_user", {})) == "FunctionCall('register_user')"
 
     assert str(
         Conversation(
