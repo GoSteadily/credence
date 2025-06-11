@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 from pathlib import Path
 from textwrap import dedent
@@ -278,8 +279,8 @@ def test_checks():
 
     assert Metadata("key").one_of([1, 2, 3]).to_check_result(1).status == InteractionResultStatus.Passed
     assert Metadata("key").one_of([1, 2, 3]).to_check_result("1").status == InteractionResultStatus.Passed
-    
-    with pytest.raises(Exception):
+
+    with pytest.raises(re.PatternError):
         Metadata("key").re_match("^abc_$as[")
 
     # RESPONSE
@@ -297,7 +298,7 @@ def test_checks():
     assert Response.re_match("^abc").to_check_result("abcd").status == InteractionResultStatus.Passed
     assert Response.re_match("^abc$").to_check_result("abcd").status == InteractionResultStatus.Failed
 
-    with pytest.raises(Exception):
+    with pytest.raises(re.PatternError):
         Response.re_match("^abc_$as[")
 
     adapter = MathChatbotAdapter()

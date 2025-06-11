@@ -52,7 +52,6 @@ class Metadata:
             except Exception as e:
                 raise Exception('`Metadata("...").equals` expects a string or value with a `__str__` implementation.') from e
 
-
         return ChatbotResponseMetadataCheck(
             key=self.field,
             value=string,
@@ -64,7 +63,7 @@ class Metadata:
             try:
                 string = str(string)
             except Exception as e:
-                    raise Exception('`Metadata("...").not_equals` could not convert value into str') from e
+                raise Exception('`Metadata("...").not_equals` could not convert value into str') from e
 
         return ChatbotResponseMetadataCheck(
             key=self.field,
@@ -79,7 +78,7 @@ class Metadata:
                 try:
                     str(value)
                 except Exception as e:
-                        raise Exception(f'`Metadata("...").one_of` could not convert `{value}` into str') from e
+                    raise Exception(f'`Metadata("...").one_of` could not convert `{value}` into str') from e
 
             # else:
             #     str_values.append(value)
@@ -98,7 +97,7 @@ class Metadata:
                 operation=Operation.RegexMatch,
             )
         except Exception as e:
-                raise Exception(f"Invalid regex: `{regexp}`") from e
+            raise Exception(f"Invalid regex: `{regexp}`") from e
 
 
 class Operation(str, enum.Enum):

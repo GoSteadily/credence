@@ -1,4 +1,3 @@
-import json
 import re
 
 from credence.conversation import Conversation
