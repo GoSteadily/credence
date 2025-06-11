@@ -45,7 +45,7 @@ class Response:
             pattern = re.compile(regexp)
             return ChatbotResponseMessageCheck(value=pattern, operation=Operation.RegexMatch)
         except Exception as e:
-            raise Exception(f"Invalid regex: `{regexp}`") from e
+            raise re.error(f"Invalid regex: `{regexp}`") from e
 
 
 class Operation(str, enum.Enum):

@@ -45,7 +45,7 @@ rm -f tmp/test_cases/*.case.md
 echo "{
         \"branch\": \"$branch\",
         \"commit\": \"$commit\",
-        \"conversations\": [" > $output_json
+        \"conversations\": [" > "$output_json"
 
 separator=''
 for file in tmp/test_cases/*.case.json; do
@@ -56,7 +56,7 @@ for file in tmp/test_cases/*.case.json; do
     separator=','
 done;
 
-echo "]}" >> $output_json
+echo "]}" >>"$output_json"
 
 rm -f tmp/test_cases/*.case.json
 
