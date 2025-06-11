@@ -1,14 +1,18 @@
 import abc
 import enum
-from dataclasses import dataclass
+import uuid
+from dataclasses import dataclass, field
+from typing import List
 
 
 @dataclass(kw_only=True)
 class BaseCheck(abc.ABC):
     """@private"""
 
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+
     @abc.abstractmethod
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Each check should define a `_str_` method that
         returns the code used to generate the check.
@@ -19,10 +23,6 @@ class BaseCheck(abc.ABC):
         type `ChatbotResponseEquals("ABC")`, the __str__
         method should return 'Response.equals("ABC")'.
         """
-
-    # @abc.abstractmethod
-    # def find_error(self, value, **kwargs):
-    #     """ """
 
     @abc.abstractmethod
     def humanize(self) -> str:
@@ -45,6 +45,8 @@ class BaseCheckResultStatus(str, enum.Enum):
 class BaseCheckResult:
     """"""
 
+    status: BaseCheckResultStatus
+
     def __init_subclass__(cls, /, **kwargs):
         super().__init_subclass__(**kwargs)
 
@@ -55,5 +57,5 @@ class BaseCheckResult:
             raise Exception("status is required for all subclasses of InteractionResult")
 
     @abc.abstractmethod
-    def generate_error_messages(self):
+    def generate_error_messages(self) -> List[str]:
         pass

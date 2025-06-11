@@ -26,6 +26,7 @@ class ChatbotResponds(Interaction):
     """@private"""
 
     expectations: List[BaseCheck]
+    type: str = "chatbot_response"
 
     def __str__(self):
         """@private"""
@@ -56,7 +57,6 @@ Chatbot.responds([{expectations_str}{closing_str})
 
         if chatbot_response is None:
             skipped = True
-            status = InteractionResultStatus.Failed
 
         check_results = []
         metadata_fields = copy.deepcopy(metadata.metadata)
@@ -82,29 +82,22 @@ Chatbot.responds([{expectations_str}{closing_str})
                 if skipped:
                     check_results.append(expectation.skipped())
                     continue
-                
+
                 try:
                     value = metadata_fields[expectation.key]
-                    check_results.append(
-                        expectation.to_check_result(value, skipped=skipped))
                 except Exception:
                     check_results.append(expectation.failed_missing_key())
+                    continue
+
+                check_results.append(expectation.to_check_result(value, skipped=skipped))
 
         metadata.clear()
 
-        if status:
-            pass
-        elif skipped:
+        if skipped:
             status = InteractionResultStatus.Skipped
+
         elif chatbot_response is None:
-            return ChatbotRespondsResult(
-                data=copy.deepcopy(self),
-                metadata=metadata_fields,
-                status=status,
-                checks=check_results,
-                missing_chatbot_message=True,
-                chatbot_response=chatbot_response,
-            )
+            status = InteractionResultStatus.Failed
 
         elif any(map(lambda c: c.status == InteractionResultStatus.Failed, check_results)):
             status = InteractionResultStatus.Failed
@@ -117,6 +110,7 @@ Chatbot.responds([{expectations_str}{closing_str})
             status=status,
             checks=check_results,
             chatbot_response=chatbot_response,
+            missing_chatbot_message=chatbot_response is None,
         )
 
     def is_user_interaction(self) -> bool:
@@ -130,10 +124,10 @@ Chatbot.responds([{expectations_str}{closing_str})
 class ChatbotRespondsResult(InteractionResult):
     data: ChatbotResponds
     metadata: Dict[str, str]
-    status: InteractionResultStatus
     chatbot_response: str
     checks: List[BaseCheckResult]
     missing_chatbot_message: bool = False
+    type: str = "chatbot_response"
 
     def generate_error_messages(self):
         if self.missing_chatbot_message:
@@ -150,6 +144,8 @@ class ChatbotRespondsResult(InteractionResult):
 class ChatbotIgnoresMessage(Interaction):
     """@private"""
 
+    type: str = "chatbot_ignore"
+
     def __str__(self):
         return "Chatbot.ignores_mesage()"
 
@@ -161,7 +157,7 @@ class ChatbotIgnoresMessage(Interaction):
 
     def to_result(self, next_message: str | None):
         if next_message:
-            return (self.failed(unhandled_message=next_message),)
+            return self.failed(unhandled_message=next_message)
         else:
             return self.passed()
 
@@ -190,11 +186,12 @@ class ChatbotIgnoresMessage(Interaction):
 @dataclass(kw_only=True)
 class ChatbotIgnoresMessageResult(InteractionResult):
     data: ChatbotIgnoresMessage
-    status: InteractionResultStatus
+
     unhandled_message: str | None = None
+    type: str = "chatbot_ignore"
 
     def generate_error_messages(self):
         if self.unhandled_message:
-            return [f"Got an unexpected chatbot message:\n`{self.unexpected_chatbot_message}`"]
+            return [f"Got an unexpected chatbot message:\n`{self.unhandled_message}`"]
 
         return []

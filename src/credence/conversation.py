@@ -37,6 +37,9 @@ class Conversation:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     """A unique id used to identify a conversation."""
 
+    version_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    """A unique id used to identify a conversation."""
+
     @staticmethod
     def nested(name: str, conversation: "Conversation") -> Interaction:
         """

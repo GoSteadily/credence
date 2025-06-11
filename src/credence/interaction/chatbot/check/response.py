@@ -2,11 +2,12 @@ import copy
 import enum
 import re
 from dataclasses import dataclass
+from typing import List
 
 from credence.interaction.chatbot.check.base import BaseCheck, BaseCheckResult, BaseCheckResultStatus
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ChatbotResponseCheck(BaseCheck):
     """
     @private
@@ -84,24 +85,27 @@ class Operation(str, enum.Enum):
                 return "did not match the regex"
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ChatbotResponseMessageCheck(ChatbotResponseCheck):
     """
     @private
     """
 
-    value: str
+    value: str | re.Pattern
     operation: Operation
+    type: str = "message_check"
 
     def __str__(self):
-        if self.operation == Operation.RegexMatch:
-            return f"Response.re_match({str_repr(self.value.pattern)})"
-        return f"Response.{self.operation.value}({str_repr(self.value)})"
+        if isinstance(self.value, re.Pattern):
+            return f"Response.{self.operation.value}({str_repr(self.value.pattern)})"
+        else:
+            return f"Response.{self.operation.value}({str_repr(self.value)})"
 
     def humanize(self):
-        if self.operation == Operation.RegexMatch:
+        if isinstance(self.value, re.Pattern):
             return f"{self.operation.should()} `{self.value.pattern}`"
-        return f"{self.operation.should()} `{self.value}`"
+        else:
+            return f"{self.operation.should()} `{self.value}`"
 
     def to_check_result(self, value: str, skipped: bool = False):
         if skipped:
@@ -115,10 +119,10 @@ class ChatbotResponseMessageCheck(ChatbotResponseCheck):
                 if self.value == value:
                     return self.failed()
             case Operation.Contains:
-                if self.value not in value:
+                if not isinstance(self.value, str) or self.value not in value:
                     return self.failed()
             case Operation.NotContains:
-                if self.value in value:
+                if not isinstance(self.value, str) or self.value in value:
                     return self.failed()
             case Operation.RegexMatch:
                 if re.search(self.value, value) is None:
@@ -148,8 +152,9 @@ class ChatbotResponseMessageCheck(ChatbotResponseCheck):
 class ChatbotResponseMessageCheckResult(BaseCheckResult):
     data: ChatbotResponseMessageCheck
     status: BaseCheckResultStatus
+    type: str = "message_check"
 
-    def generate_error_messages(self):
+    def generate_error_messages(self) -> List[str]:
         if self.status == BaseCheckResultStatus.Failed:
             return [f"Chatbot response did not meet requirement:\n{self.data.humanize()}"]
 

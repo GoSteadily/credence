@@ -1,156 +1,100 @@
-# from dataclasses import dataclass
-# from html import escape
-# from typing import List
+import dataclasses
+import enum
+import json
+import re
+from typing import Any, Dict, List
 
-# from markdowngenerator import MarkdownGenerator
-
-# from credence.conversation import Conversation
-# from credence.exceptions import ColoredException
-# from credence.interaction.chatbot import ChatbotIgnoresMessage, ChatbotResponds
-# from credence.interaction.nested_conversation import NestedConversation
-# from credence.interaction.user import UserMessage
-# from credence.message import Message
-# from credence.result import Result
-# from credence.role import Role
+from credence.interaction import InteractionResult, InteractionResultStatus
+from credence.interaction.chatbot import ChatbotRespondsResult
+from credence.interaction.chatbot.check.base import BaseCheckResult
+from credence.message import Message
+from credence.result import Result
 
 
-# @dataclass
-# class JsonRender:
-#     def to_json(result: Result, index=None):
-#         # prefix = "✅" if result.errors == [] else "❌"
+class JsonRenderer:
+    @staticmethod
+    def to_json(result: Result, index: int):
+        # ------------------------------------------------------------------ #
+        # Build the top-level structure
+        # ------------------------------------------------------------------ #
+        payload: Dict[str, Any] = {
+            "conversation_id": result.conversation_id,
+            "version_id": result.version_id,
+            "index": index - 1,
+            "title": result.title,
+            "failed": result.failed,
+            "chatbot_time_ms": result.chatbot_time_ms,
+            "testing_time_ms": result.testing_time_ms,
+            "total_time_ms": result.chatbot_time_ms + result.testing_time_ms,
+            "interactions": _serialise(result.interaction_results),
+        }
 
-#         # index_str = f"{index}. " if index else ""
+        if result.failed:
+            errors: List[str] = []
+            for interaction in result.interaction_results:
+                if interaction.status == InteractionResultStatus.Failed:
+                    errors.extend(interaction.generate_error_messages())
 
-#         doc = {
-#             "chatbot_time_ms": result.chatbot_time_ms,
-#             "testing_time_ms": result.testing_time_ms,
-#             "conv": JsonRender._to_conversation(
-#                 result=result,
-#                 doc=doc,
-#                 conversation=result.conversation,
-#                 messages=result.messages.copy(),
-#             ),
-#         }
+            payload["errors"] = errors
+        else:
+            payload["errors"] = []
 
-#         if result.errors:
-#             with DetailsAndSummary(doc, "Errors"):
-#                 for index, error in enumerate(result.errors, 1):
-#                     if isinstance(error, ColoredException):
-#                         doc.writeTextLine(f"{index}. {error.markdown_message}\n", html_escape=False)
-#                     else:
-#                         doc.writeTextLine(f"{index}. {error}\n", html_escape=False)
-
-#         return doc
-
-#     @staticmethod
-#     def _to_conversation(result: Result, doc: MarkdownGenerator, conversation: Conversation, messages: List[Message]):
-#         from credence.interaction.function_call import FunctionCall
-
-#         interactions = []
-
-#         for interaction in conversation.interactions:
-#             if isinstance(interaction, NestedConversation):
-#                 interactions.append(
-#                     {
-#                         "id": interaction.id,
-#                         "type": "nested_conversation",
-#                         "nested_conversation": JsonRender._to_conversation(
-#                             result=result,
-#                             doc=doc,
-#                             conversation=interaction.conversation,
-#                             messages=messages,
-#                         ),
-#                     }
-#                 )
-
-#             elif isinstance(interaction, FunctionCall):
-#                 interactions.append(
-#                     {
-#                         "id": interaction.id,
-#                         "type": "function_call",
-#                         "function_call": {
-#                             "function_id": interaction.function_id,
-#                             "name": interaction.function,
-#                             "args": interaction.kwargs,
-#                         },
-#                     }
-#                 )
-
-#             elif isinstance(interaction, UserMessage):
-#                 message = messages[0]
-#                 messages.remove(message)
-
-#                 if message.role == Role.User:
-#                     interactions.append(
-#                         {
-#                             "id": interaction.id,
-#                             "type": "user_message",
-#                             "user_message": {
-#                                 "generated": interaction.generated,
-#                                 "message": interaction.text,
-#                             },
-#                             "message": message.body,
-#                         }
-#                     )
-
-#             elif isinstance(interaction, ChatbotIgnoresMessage):
-#                 interactions.append(
-#                     {
-#                         "id": interaction.id,
-#                         "type": "chatbot_ignore",
-#                         "chatbot_ignore": {},
-#                     }
-#                 )
-
-#             elif isinstance(interaction, ChatbotResponds):
-#                 message = messages[0]
-#                 messages.remove(message)
-
-#                 if message.role == Role.Chatbot:
-#                     failed = False
-#                     for expectation in interaction.expectations:
-#                         failed = failed or not expectation.passed
-
-#                     name = f"asst{' ❌' if failed else ''}:"
-#                     with DetailsAndSummary(doc, f"<code>{name}</code>  {escape(message.body, quote=False)}", escape_html=False):
-#                         doc.addHorizontalRule()
-
-#                         if interaction.expectations != []:
-#                             marks = []
-#                             for expectation in interaction.expectations:
-#                                 marks.append("✅" if expectation.passed else "❌")
-
-#                             marks = " ".join(marks)
-
-#                             with DetailsAndSummary(doc, f"Checks <code>{marks}</code>", escape_html=False):
-#                                 for expectation in interaction.expectations:
-#                                     prefix = "`✅`" if expectation.passed else "`❌`"
-#                                     doc.writeText(f"  * {prefix} {escape(expectation.humanize(), quote=False)}")
-#                                 doc.writeTextLine()
-
-#                         with DetailsAndSummary(doc, "Metadata", escape_html=False):
-#                             doc.addTable(
-#                                 header_names=["Key", "Value"],
-#                                 row_elements=[[k, v] for (k, v) in message.metadata.items()],
-#                                 alignment="left",
-#                             )
-#         return {"id": result.conversation.id, "name": result.conversation.title, "interactions": interactions}
+        return json.dumps(payload, indent=2, ensure_ascii=False)
 
 
-# class DetailsAndSummary:
-#     "@private"
+def _serialise(obj: Any, serialize_index: int | None = None):
+    if obj is None or isinstance(obj, (bool, int, float, str)):
+        return obj
 
-#     def __init__(self, doc: MarkdownGenerator, title: str, escape_html: bool = True):
-#         self.doc = doc
-#         self.title = title
-#         self.escape_html = escape_html
+    if isinstance(obj, re.Pattern):
+        return obj.pattern
 
-#     def __enter__(self):
-#         self.doc.insertDetailsAndSummary(self.title, escape_html=self.escape_html)
+    # enums → their value
+    if isinstance(obj, enum.Enum):
+        return obj.value
 
-#     def __exit__(self, exc_type, exc_value, exc_traceback):
-#         self.doc.endDetailsAndSummary()
+    # InteractionResult (is a dataclass, but may hold nested Results)
+    if isinstance(obj, InteractionResult) or isinstance(obj, BaseCheckResult):
+        if isinstance(obj, ChatbotRespondsResult):
+            values = {k: _serialise(v) for k, v in dataclasses.asdict(obj).items()}
+            values["checks"] = _serialise(obj.checks)
+            values["interaction_id"] = obj.data.id
 
+        elif isinstance(obj, InteractionResult):
+            values = {k: _serialise(v) for k, v in dataclasses.asdict(obj).items()}
+            values["interaction_id"] = obj.data.id
 
-# def _ms_to_s(ms):
-#     return f"{ms / 1000}s"
+        elif isinstance(obj, BaseCheckResult):
+            values = {k: _serialise(v) for k, v in dataclasses.asdict(obj).items()}
+            values["check_id"] = obj.data.id
+
+        del values["data"]
+
+        return {
+            obj.type: values,
+            "index": serialize_index,
+        }
+
+    # dataclasses → asdict + recurse
+    if dataclasses.is_dataclass(obj):
+        return {k: _serialise(v) for k, v in dataclasses.asdict(obj).items()}
+
+    if isinstance(obj, Message):
+        d: Dict[str, Any] = {
+            "role": _serialise(obj.role),
+            "body": obj.body,
+            "index": obj.index,
+        }
+        if obj.metadata:
+            d["metadata"] = _serialise(obj.metadata)
+        return d
+
+    # containers
+    if isinstance(obj, dict):
+        return {k: _serialise(v) for k, v in obj.items()}
+
+    if isinstance(obj, (list, tuple, set)):
+        return [_serialise(v, index) for index, v in enumerate(obj)]
+
+    # fall-back
+    return str(obj)

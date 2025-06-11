@@ -16,6 +16,7 @@ class UserMessage(Interaction):
 
     text: str
     generated: bool
+    type: str = "user_message"
 
     def is_user_interaction(self) -> bool:
         return True
@@ -32,7 +33,7 @@ class UserMessage(Interaction):
         messages: List[Message],
         handle_message: Any,
         next_chatbot_message: str | None,
-    ):
+    ) -> "UserMessageResult":
         if skipped:
             return self.skipped()
 
@@ -62,7 +63,7 @@ class UserMessage(Interaction):
             )
 
         except Exception as e:
-            self.failed(handle_message_error=f"{e}")
+            return self.failed(handle_message_error=f"{e}")
 
     def _generate_user_message(
         self,
@@ -145,14 +146,15 @@ class UserMessageResult(InteractionResult):
     generation_error: str | None = None
     handle_message_error: str | None = None
     unexpected_chatbot_message: str | None = None
+    type: str = "user_message"
 
     def generate_error_messages(self):
         if self.generation_error:
-            return [f"Error while generating user message:\n`{self.generation_error}`"]
+            return [f"Error while generating user message:\n\n`{self.generation_error}`"]
         if self.handle_message_error:
-            return [f"Error while calling `handle_message`:\n`{self.handle_message_error}`"]
+            return [f"Error while calling `handle_message`:\n\n`{self.handle_message_error}`"]
         if self.unexpected_chatbot_message:
-            return [f"Got an unexpected chatbot message:\n`{self.unexpected_chatbot_message}`"]
+            return [f"Got an unexpected chatbot message:\n\n`{self.unexpected_chatbot_message}`"]
 
         return []
 

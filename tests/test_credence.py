@@ -1,5 +1,6 @@
 import os
 import tempfile
+from pathlib import Path
 from textwrap import dedent
 from typing import List, Tuple
 
@@ -49,6 +50,9 @@ class MathChatbotAdapter(Adapter):
     def register_user(self, name: str):
         self.context["user"] = name
 
+    def failing_function(self):
+        raise Exception("Failing")
+
 
 class MyLLMChecker(LLMChecker):
     def create_client(self):
@@ -63,6 +67,7 @@ class MyLLMChecker(LLMChecker):
 
 
 def conversations():
+    return [(True, c) for c in decode_conversations(download(""))]
     user_registration_flow = Conversation(
         title="we greet registered users by name",
         interactions=[
@@ -113,10 +118,19 @@ def conversations():
             ),
         ],
     )
+    failing_test3 = Conversation(
+        title="Failing test 3",
+        interactions=[
+            FunctionCall("failing_function", {}),
+            User.message("Hi"),
+            Chatbot.responds([]),
+        ],
+    )
 
     return [
         (False, failing_test),
         (False, failing_test2),
+        (False, failing_test3),
         (
             False,
             Conversation(
@@ -213,11 +227,13 @@ def test_maa(conversation):
     result = adapter.test(conversation)
     print(result)
     result.to_stdout()
-    # Path("tmp/test_cases").mkdir(parents=True, exist_ok=True)
-    # passed = "p" if result.errors == [] else "f"
+    Path("tmp/test_cases").mkdir(parents=True, exist_ok=True)
+    passed = "p" if not result.failed else "f"
 
-    # with Path(f"tmp/test_cases/{index_str(index)}. {conversation.title}.{passed}.case.md").open("w") as f:
-    #     f.write(result.to_markdown(index=index))
+    with Path(f"tmp/test_cases/{index_str(index)}. {conversation.title}.{passed}.case.md").open("w") as f:
+        f.write(result.to_markdown(index=index))
+    with Path(f"tmp/test_cases/{index_str(index)}. {conversation.title}.{passed}.case.json").open("w") as f:
+        f.write(result.to_json(index=index))
 
     if should_pass:
         assert not result.failed, "Failed when evaluating the test"

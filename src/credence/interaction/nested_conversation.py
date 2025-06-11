@@ -59,6 +59,8 @@ class NestedConversation(Interaction):
 
     conversation: Conversation
     """@private The nested conversation"""
+    type: str = "nested_conversation"
+    """@private The nested conversation"""
 
     def __str__(self):
         nested_conversation_str = str(self.conversation)
@@ -96,8 +98,9 @@ Conversation.nested(
 @dataclass(kw_only=True)
 class NestedConversationResult(InteractionResult):
     data: NestedConversation
-    status: InteractionResultStatus
+
     results: Result
+    type: str = "nested_conversation"
 
     def generate_error_messages(self):
         errors = []

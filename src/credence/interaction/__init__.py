@@ -2,6 +2,7 @@ import abc
 import enum
 import uuid
 from dataclasses import dataclass, field
+from typing import List
 
 
 @dataclass(kw_only=True)
@@ -20,7 +21,7 @@ class Interaction(abc.ABC):
         "@private"
 
     @abc.abstractmethod
-    def to_result(self) -> "InteractionResult":
+    def to_result(self, **kwargs) -> "InteractionResult":
         "@private"
 
 
@@ -36,15 +37,18 @@ class InteractionResultStatus(str, enum.Enum):
 class InteractionResult(abc.ABC):
     """"""
 
+    status: InteractionResultStatus
+
     def __init_subclass__(cls, /, **kwargs):
         super().__init_subclass__(**kwargs)
+
+        if cls.__annotations__.get("type", None) is None:
+            raise Exception(f"type is required for all subclasses of InteractionResult {cls} {vars(cls)}")
 
         if cls.__annotations__.get("data", None) is None:
             raise Exception(f"data is required for all subclasses of InteractionResult {cls} {vars(cls)}")
 
-        if cls.__annotations__.get("status", None) is None:
-            raise Exception("status is required for all subclasses of InteractionResult")
 
     @abc.abstractmethod
-    def generate_error_messages(self):
+    def generate_error_messages(self) -> List[str]:
         pass

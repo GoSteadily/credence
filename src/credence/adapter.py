@@ -1,6 +1,7 @@
 import abc
 import logging
 import time
+import traceback
 from queue import Empty, Queue
 from textwrap import dedent
 from typing import Any, Dict, List
@@ -158,7 +159,7 @@ class Adapter(abc.ABC):
         try:
             from credence import metadata
 
-            metadata.clear_adapter(None)
+            metadata.clear_adapter()
         except Exception:
             pass
 
@@ -337,8 +338,9 @@ class Adapter(abc.ABC):
                     interaction.call(self)
                     interaction_results.append(interaction.passed())
 
-                except Exception as e:
-                    interaction_results.append(interaction.failed(execution_error=f"{e}"))
+                except Exception:
+                    trace = str(traceback.format_exc())
+                    interaction_results.append(interaction.failed(execution_error=f"{trace[-3000:]}"))
 
             elif isinstance(interaction, UserMessage):
                 generation_start_time = time.time()
@@ -356,7 +358,7 @@ class Adapter(abc.ABC):
                 )
                 interaction_results.append(result)
 
-                if result.status == InteractionResultStatus.Passed:
+                if result.status == InteractionResultStatus.Passed and result.user_message:
                     self._add_message(Role.User, result.user_message)
                     if result.chatbot_response:
                         self._add_message(Role.Chatbot, result.chatbot_response)
@@ -387,6 +389,8 @@ class Adapter(abc.ABC):
             has_failed = has_failed or interaction_results[-1].status != InteractionResultStatus.Passed
 
         return Result(
+            conversation_id=conversation.id,
+            version_id=conversation.version_id,
             title=conversation.title,
             messages=self.messages,
             failed=has_failed,

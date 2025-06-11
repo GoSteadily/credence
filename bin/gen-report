@@ -7,20 +7,27 @@
 # set -euo pipefail
 
 output="tmp/test_cases/$(date -u '+%Y-%m-%d_%H-%M-%SZ')-$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse --short=8 HEAD).md"
+output_json="tmp/test_cases/$(date -u '+%Y-%m-%d_%H-%M-%SZ')-$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse --short=8 HEAD).json"
+
+branch="$(git rev-parse --abbrev-ref HEAD)"
+commit="$(git rev-parse HEAD)"
+commit_short="$(git rev-parse --short=8 HEAD)"
 
 mkdir -p tmp/test_cases
 rm -f tmp/test_cases/*.case.md
+rm -f tmp/test_cases/*.case.json
+
 
 
 {
     printf "|           | Details |\n";
     printf "|-----------|---------|\n";
-    printf "| Branch    | %s      |\n" "$(git rev-parse --abbrev-ref HEAD)";
-    printf "| Commit    | %s      |\n" "$(git rev-parse --short=8 HEAD)";
+    printf "| Branch    | %s      |\n" "$branch";
+    printf "| Commit    | %s      |\n" "$commit_short";
     printf "| Timestamp | %s UTC  |\n" "$(date -u '+%Y-%m-%d %H:%M:%SZ')";
 } > "$output"
 
-pytest -s -o log_cli=true -k test_maa 
+pytest -s -o log_cli=true -k test_maa -n 8
 
 passing_tests=(tmp/test_cases/*.p.case.md)
 num_passing=${#passing_tests[@]}
@@ -32,4 +39,25 @@ printf "| Success Rate | %s / %s |\n\n"  "$num_passing" "$num_cases" >> "$output
 
 cat tmp/test_cases/*.case.md >> "$output"
 rm -f tmp/test_cases/*.case.md
+
+
+echo "{
+        \"branch\": \"$branch\",
+        \"commit\": \"$commit\",
+        \"conversations\": [" > $output_json
+
+separator=''
+for file in tmp/test_cases/*.case.json; do
+    if [[ -f "$file" ]]; then
+        echo $separator >> "$output_json"
+        cat "$file" >> "$output_json"
+    fi
+    separator=','
+done;
+
+echo "]}" >> $output_json
+
+rm -f tmp/test_cases/*.case.json
+
 echo "Generated $output"
+echo "Generated $output_json"

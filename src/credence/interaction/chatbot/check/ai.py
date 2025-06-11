@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 """@private"""
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ChatbotResponseAICheck(ChatbotResponseCheck):
     """
     @private
@@ -27,6 +27,7 @@ class ChatbotResponseAICheck(ChatbotResponseCheck):
     prompt: str
     # Increase the number of retries for brittle tests
     retries: int = 0
+    type: str = "ai_check"
 
     def __str__(self):
         if self.retries > 0:
@@ -93,6 +94,7 @@ class ChatbotResponseAICheckResult(BaseCheckResult):
     invalid_adapter_error: str | None = None
     generation_error: str | None = None
     unmet_requirement: str | None = None
+    type: str = "ai_check"
 
     def generate_error_messages(self):
         if self.invalid_adapter_error:

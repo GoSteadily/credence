@@ -2,7 +2,7 @@ import copy
 import enum
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List
 
 from credence.interaction.chatbot.check.base import BaseCheckResult, BaseCheckResultStatus
 from credence.interaction.chatbot.check.response import ChatbotResponseCheck
@@ -151,25 +151,28 @@ class Operation(str, enum.Enum):
                 return "is not one of"
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ChatbotResponseMetadataCheck(ChatbotResponseCheck):
     """
     @private
     """
 
     key: str
-    value: str
+    value: str | re.Pattern | List[str]
     operation: Operation
+    type: str = "metadata_check"
 
     def __str__(self):
-        if self.operation == Operation.RegexMatch:
-            return f"Metadata({str_repr(self.key)}).re_match({str_repr(self.value.pattern)})"
-        return f"Metadata({str_repr(self.key)}).{self.operation.value}({str_repr(self.value)})"
+        if isinstance(self.value, re.Pattern):
+            return f"Metadata({str_repr(self.key)}).{self.operation.value}({str_repr(self.value.pattern)})"
+        else:
+            return f"Metadata({str_repr(self.key)}).{self.operation.value}({str_repr(self.value)})"
 
     def humanize(self):
-        if self.operation == Operation.RegexMatch:
+        if isinstance(self.value, re.Pattern):
             return f'metadata["{self.key}"] {self.operation.should()} `{self.value.pattern}`'
-        return f'metadata["{self.key}"] {self.operation.should()} `{self.value}`'
+        else:
+            return f'metadata["{self.key}"] {self.operation.should()} `{self.value}`'
 
     def to_check_result(self, value, skipped=False):
         if skipped:
@@ -189,16 +192,20 @@ class ChatbotResponseMetadataCheck(ChatbotResponseCheck):
                 if self.value in value:
                     return self.failed_check()
             case Operation.RegexMatch:
-                if re.search(self.value, value) is None:
+                if isinstance(self.value, re.Pattern) and re.search(self.value, value) is None:
                     return self.failed_check()
             case Operation.OneOf:
-                str_values = [str(v) for v in self.value]
+                possible_values = self.value
+                if not isinstance(possible_values, list):
+                    return self.failed_check()
+
+                str_values = [str(v) for v in possible_values]
                 try:
                     str_value = str(value)
-                    if value not in self.value and str_value not in str_values:
+                    if value not in possible_values and str_value not in str_values:
                         return self.failed_check()
                 except Exception:
-                    if value not in self.value:
+                    if value not in possible_values:
                         return self.failed_check()
         return self.passed()
 
@@ -212,7 +219,7 @@ class ChatbotResponseMetadataCheck(ChatbotResponseCheck):
         return ChatbotResponseMetadataCheckResult(
             status=BaseCheckResultStatus.Failed,
             data=copy.deepcopy(self),
-            missing_key=self.key,
+            missing_key=True,
         )
 
     def failed_check(self):
@@ -233,10 +240,11 @@ class ChatbotResponseMetadataCheckResult(BaseCheckResult):
     data: ChatbotResponseMetadataCheck
     status: BaseCheckResultStatus
     missing_key: bool = False
+    type: str = "metadata_check"
 
     def generate_error_messages(self):
         if self.missing_key:
-            return [f"Metadata key is missing:\n{self.data.key}"]
+            return [f"Metadata key is missing:\n'{self.data.key}'"]
 
         if self.status == BaseCheckResultStatus.Failed:
             return [f"Metadata value for {self.data.key} did not meet requirement:\n{self.data.humanize()}"]
@@ -244,7 +252,7 @@ class ChatbotResponseMetadataCheckResult(BaseCheckResult):
         return []
 
 
-def str_repr(string: str):
+def str_repr(string: str|List[str]):
     """
     @private
     """

@@ -22,35 +22,36 @@ class FunctionCall(Interaction):
     >>> FunctionCall("function_with_args", {"arg_a": "1", "arg_b": "2"})
     """
 
-    function: str
+    name: str
     """The name of the function on the adapter instance."""
-    kwargs: Dict[str, str] = field(default_factory=dict)
+    args: Dict[str, str] = field(default_factory=dict)
     """The keyword arguments that will be applied to the function."""
-    function_id: str = ""
+    type: str = "function_call"
     """@private"""
 
-    def __init__(self, name, kwargs={}):
+    def __init__(self, id, name, args={}):
         super().__init__()
 
-        self.function = name
-        self.kwargs = kwargs
+        self.id = id
+        self.name = name
+        self.args = args
 
     def call(self, adapter: "Adapter"):
         return self.to_result(adapter=adapter)
 
     def to_result(self, adapter: "Adapter"):
-        if hasattr(adapter, self.function) and callable(getattr(adapter, self.function)):
-            func = getattr(adapter, self.function)
-            func(**self.kwargs)
+        if hasattr(adapter, self.name) and callable(getattr(adapter, self.name)):
+            func = getattr(adapter, self.name)
+            func(**self.args)
         else:
-            raise Exception(f"Function not defined: {self.function}")
+            raise Exception(f"Function not defined: {self.name}")
 
     def __str__(self):
         """ """
-        name = self.function.__repr__()
+        name = self.name.__repr__()
 
-        if len(self.kwargs) > 0:
-            return f"FunctionCall({name}, {self.kwargs})"
+        if len(self.args) > 0:
+            return f"FunctionCall({name}, {self.args})"
 
         else:
             return f"FunctionCall({name})"
@@ -77,7 +78,7 @@ class FunctionCall(Interaction):
             execution_error=execution_error,
         )
 
-    def skipped(self, status: InteractionResultStatus, execution_error: str | None = None) -> "FunctionCallResult":
+    def skipped(self, execution_error: str | None = None) -> "FunctionCallResult":
         return FunctionCallResult(
             data=copy.deepcopy(self),
             status=InteractionResultStatus.Skipped,
@@ -88,8 +89,9 @@ class FunctionCall(Interaction):
 @dataclass(kw_only=True)
 class FunctionCallResult(InteractionResult):
     data: FunctionCall
-    status: InteractionResultStatus
+
     execution_error: str | None = None
+    type: str = "function_call"
 
     def generate_error_messages(self):
         if self.execution_error:

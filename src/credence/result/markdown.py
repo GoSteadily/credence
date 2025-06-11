@@ -6,33 +6,33 @@ from typing import List
 
 from markdowngenerator import MarkdownGenerator
 
-from credence.conversation import Conversation
-from credence.interaction.chatbot import ChatbotIgnoresMessage, ChatbotResponds
-from credence.interaction.nested_conversation import NestedConversation
-from credence.interaction.user import UserMessage
+from credence.interaction import InteractionResultStatus
+from credence.interaction.chatbot import ChatbotIgnoresMessageResult, ChatbotRespondsResult
+from credence.interaction.chatbot.check.base import BaseCheckResultStatus
+from credence.interaction.nested_conversation import NestedConversationResult
+from credence.interaction.user import UserMessageResult
 from credence.message import Message
 from credence.result import Result
-from credence.role import Role
 
 
 @dataclass
 class MarkdownRenderer:
+    @staticmethod
     def to_markdown(result: Result, index=None):
         with tempfile.TemporaryDirectory() as tmpdir:
             filename = Path(tmpdir).joinpath("default.md")
             with MarkdownGenerator(filename=filename, enable_TOC=False, enable_write=False) as doc:
-                prefix = "✅" if result.errors == [] else "❌"
+                prefix = "✅" if not result.failed else "❌"
 
-            #     index_str = f"{index}. " if index else ""
+                index_str = f"{index}. " if index else ""
 
-            #     with DetailsAndSummary(doc, f"<h3><code>{prefix}</code> {index_str}{escape(result.conversation.title, quote=False)}</h3>", escape_html=False):
-            #         doc.addHeader(3, "Conversation")
-            #         MarkdownRenderer._add_conversation(
-            #             result=result,
-            #             doc=doc,
-            #             conversation=result.conversation,
-            #             messages=result.messages.copy(),
-            #         )
+                with DetailsAndSummary(doc, f"<h3><code>{prefix}</code> {index_str}{escape(result.title, quote=False)}</h3>", escape_html=False):
+                    doc.addHeader(3, "Conversation")
+                    MarkdownRenderer._add_conversation(
+                        result=result,
+                        doc=doc,
+                        messages=result.messages.copy(),
+                    )
 
             #         doc.addHorizontalRule()
 
@@ -63,65 +63,89 @@ class MarkdownRenderer:
         return "".join(doc.document_data_array)
 
     @staticmethod
-    def _add_conversation(result: Result, doc: MarkdownGenerator, conversation: Conversation, messages: List[Message]):
+    def _add_conversation(result: Result, doc: MarkdownGenerator, messages: List[Message]):
         from credence.interaction.function_call import FunctionCall
 
-        for interaction in conversation.interactions:
-            if isinstance(interaction, NestedConversation):
-                with DetailsAndSummary(doc, "🧵 " + interaction.name):
+        for interaction in result.interaction_results:
+            if isinstance(interaction, NestedConversationResult):
+                with DetailsAndSummary(doc, "🧵 " + interaction.data.name):
                     MarkdownRenderer._add_conversation(
-                        result=result,
+                        result=interaction.results,
                         doc=doc,
-                        conversation=interaction.conversation,
                         messages=messages,
                     )
 
             elif isinstance(interaction, FunctionCall):
+                # TODO:
                 pass
 
-            elif isinstance(interaction, UserMessage):
-                message = messages[0]
-                messages.remove(message)
-
-                if message.role == Role.User:
-                    title = f"<code>user:</code> {escape(message.body, quote=False)}"
+            elif isinstance(interaction, UserMessageResult):
+                if interaction.status == InteractionResultStatus.Passed:
+                    title = f"<code>user:</code> {escape(interaction.user_message, quote=False)}"
                     with DetailsAndSummary(doc, title, escape_html=False):
                         pass
+                elif interaction.status == InteractionResultStatus.Failed:
+                    title = "<code>user ❌:</code>"
+                    with DetailsAndSummary(doc, title, escape_html=False):
+                        # TODO: Show errors: use generate errors?
+                        pass
 
-            elif isinstance(interaction, ChatbotIgnoresMessage):
-                with DetailsAndSummary(doc, "<code>asst: </code> ", escape_html=False):
+            elif isinstance(interaction, ChatbotIgnoresMessageResult):
+                if interaction.status == InteractionResultStatus.Passed:
+                    with DetailsAndSummary(doc, "<code>asst: </code> ", escape_html=False):
+                        pass
+                elif interaction.status == InteractionResultStatus.Failed:
+                    with DetailsAndSummary(doc, f"<code>asst ❌: {interaction.unhandled_message}</code> ", escape_html=False):
+                        # TODO: Show errors: use generate errors?
+                        pass
                     pass
 
-            elif isinstance(interaction, ChatbotResponds):
-                message = messages[0]
-                messages.remove(message)
+            elif isinstance(interaction, ChatbotRespondsResult):
+                if interaction.status == InteractionResultStatus.Passed:
+                    icon = ""
+                elif interaction.status == InteractionResultStatus.Failed:
+                    icon = " ❌"
+                elif interaction.status == InteractionResultStatus.Skipped:
+                    icon = " ⛔︎"
 
-                if message.role == Role.Chatbot:
-                    failed = False
-                    for expectation in interaction.expectations:
-                        failed = failed or not expectation.passed
+                if interaction.missing_chatbot_message:
+                    pass
+                else:
+                    name = f"asst{icon}:"
 
-                    name = f"asst{' ❌' if failed else ''}:"
-                    with DetailsAndSummary(doc, f"<code>{name}</code>  {escape(message.body, quote=False)}", escape_html=False):
+                    with DetailsAndSummary(doc, f"<code>{name}</code>  {escape(interaction.chatbot_response, quote=False)}", escape_html=False):
                         doc.addHorizontalRule()
 
-                        if interaction.expectations != []:
+                        if interaction.checks != []:
                             marks = []
-                            for expectation in interaction.expectations:
-                                marks.append("✅" if expectation.passed else "❌")
+                            for check in interaction.checks:
+                                if check.status == BaseCheckResultStatus.Passed:
+                                    mark = "✅"
+                                elif check.status == BaseCheckResultStatus.Failed:
+                                    mark = "❌"
+                                elif check.status == BaseCheckResultStatus.Skipped:
+                                    mark = "⛔︎"
+
+                                marks.append(mark)
 
                             marks = " ".join(marks)
 
                             with DetailsAndSummary(doc, f"Checks <code>{marks}</code>", escape_html=False):
-                                for expectation in interaction.expectations:
-                                    prefix = "`✅`" if expectation.passed else "`❌`"
-                                    doc.writeText(f"  * {prefix} {escape(expectation.humanize(), quote=False)}")
+                                for check in interaction.checks:
+                                    if check.status == BaseCheckResultStatus.Passed:
+                                        mark = "✅"
+                                    elif check.status == BaseCheckResultStatus.Failed:
+                                        mark = "❌"
+                                    elif check.status == BaseCheckResultStatus.Skipped:
+                                        mark = "⛔︎"
+
+                                    doc.writeText(f"  * `{mark}` {escape(check.data.humanize(), quote=False)}\n")
                                 doc.writeTextLine()
 
                         with DetailsAndSummary(doc, "Metadata", escape_html=False):
                             doc.addTable(
                                 header_names=["Key", "Value"],
-                                row_elements=[[k, v] for (k, v) in message.metadata.items()],
+                                row_elements=[[k, v] for (k, v) in interaction.metadata.items()],
                                 alignment="left",
                             )
 
