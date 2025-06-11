@@ -50,10 +50,8 @@ class Metadata:
             try:
                 string = str(string)
             except Exception as e:
-                try:
-                    raise Exception('`Metadata("...").equals` expects a string or value with a `__str__` implementation.') from e
-                except Exception as e2:
-                    return e2
+                raise Exception('`Metadata("...").equals` expects a string or value with a `__str__` implementation.') from e
+
 
         return ChatbotResponseMetadataCheck(
             key=self.field,
@@ -66,10 +64,7 @@ class Metadata:
             try:
                 string = str(string)
             except Exception as e:
-                try:
                     raise Exception('`Metadata("...").not_equals` could not convert value into str') from e
-                except Exception as e2:
-                    return e2
 
         return ChatbotResponseMetadataCheck(
             key=self.field,
@@ -84,10 +79,7 @@ class Metadata:
                 try:
                     str(value)
                 except Exception as e:
-                    try:
                         raise Exception(f'`Metadata("...").one_of` could not convert `{value}` into str') from e
-                    except Exception as e2:
-                        return e2
 
             # else:
             #     str_values.append(value)
@@ -106,10 +98,7 @@ class Metadata:
                 operation=Operation.RegexMatch,
             )
         except Exception as e:
-            try:
                 raise Exception(f"Invalid regex: `{regexp}`") from e
-            except Exception as e2:
-                return e2
 
 
 class Operation(str, enum.Enum):
@@ -119,6 +108,21 @@ class Operation(str, enum.Enum):
     NotContains = "not_contains"
     RegexMatch = "regex_match"
     OneOf = "one_of"
+
+    def operation_name(self):
+        match self:
+            case Operation.Equals:
+                return "equals"
+            case Operation.NotEquals:
+                return "not_equals"
+            case Operation.Contains:
+                return "contains"
+            case Operation.NotContains:
+                return "not_contains"
+            case Operation.RegexMatch:
+                return "re_match"
+            case Operation.OneOf:
+                return "one_of"
 
     def should(self):
         match self:
@@ -164,9 +168,9 @@ class ChatbotResponseMetadataCheck(ChatbotResponseCheck):
 
     def __str__(self):
         if isinstance(self.value, re.Pattern):
-            return f"Metadata({str_repr(self.key)}).{self.operation.value}({str_repr(self.value.pattern)})"
+            return f"Metadata({str_repr(self.key)}).{self.operation.operation_name()}({str_repr(self.value.pattern)})"
         else:
-            return f"Metadata({str_repr(self.key)}).{self.operation.value}({str_repr(self.value)})"
+            return f"Metadata({str_repr(self.key)}).{self.operation.operation_name()}({str_repr(self.value)})"
 
     def humanize(self):
         if isinstance(self.value, re.Pattern):
@@ -252,7 +256,7 @@ class ChatbotResponseMetadataCheckResult(BaseCheckResult):
         return []
 
 
-def str_repr(string: str|List[str]):
+def str_repr(string: str | List[str]):
     """
     @private
     """

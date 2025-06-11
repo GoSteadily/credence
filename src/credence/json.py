@@ -38,7 +38,6 @@ def _decode_interaction(data, conversation_lookup):
                 )
             elif ct == "metadata_check":
                 op = metadata.Operation(check["metadata_check"]["op"])
-                print(op)
                 check_ = ChatbotResponseMetadataCheck(
                     id=check["metadata_check"]["id"],
                     key=check["metadata_check"]["key"],
@@ -155,8 +154,8 @@ def download(api_key):
         data = response.json()  # Parse JSON response
 
         # 4. (Optional) Save it to a local file
-        with open("downloaded_data.json", "w") as f:
-            json.dump(data, f, indent=2)
+        # with open("downloaded_data.json", "w") as f:
+        #     json.dump(data, f, indent=2)
 
         # print("Download complete. Saved to downloaded_data.json")
         return data

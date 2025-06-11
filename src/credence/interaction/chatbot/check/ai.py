@@ -1,5 +1,6 @@
 import copy
 import logging
+import traceback
 from dataclasses import dataclass
 from textwrap import dedent
 from typing import List
@@ -57,8 +58,9 @@ class ChatbotResponseAICheck(ChatbotResponseCheck):
                 messages=messages,
                 requirement=self.prompt,
             )
-        except Exception as e:
-            return self.failed(generation_error=f"{e}")
+        except Exception:
+            trace = str(traceback.format_exc())
+            return self.failed(generation_error=f"{trace[-3000:]}")
 
         if result.requirement_met:
             return self.passed()

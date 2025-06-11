@@ -29,10 +29,11 @@ class FunctionCall(Interaction):
     type: str = "function_call"
     """@private"""
 
-    def __init__(self, id, name, args={}):
+    def __init__(self,  name, args={},id=None):
         super().__init__()
 
-        self.id = id
+        if id:
+            self.id = id
         self.name = name
         self.args = args
 

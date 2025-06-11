@@ -225,7 +225,6 @@ def test_maa(conversation):
     adapter = MathChatbotAdapter()
 
     result = adapter.test(conversation)
-    print(result)
     result.to_stdout()
     Path("tmp/test_cases").mkdir(parents=True, exist_ok=True)
     passed = "p" if not result.failed else "f"
@@ -260,46 +259,52 @@ def test_assert_that():
 
 def test_checks():
     # METADATA
-    assert Metadata("key").contains(string="bc").to_result("abcd").status == InteractionResultStatus.Passed
-    assert Metadata("key").contains(string="bc").to_result("def").status == InteractionResultStatus.Failed
+    assert Metadata("key").contains(string="bc").to_check_result("abcd").status == InteractionResultStatus.Passed
+    assert Metadata("key").contains(string="bc").to_check_result("def").status == InteractionResultStatus.Failed
 
-    assert Metadata("key").equals(string="abc").to_result("abc").status == InteractionResultStatus.Passed
-    assert Metadata("key").equals(string="abc").to_result("def").status == InteractionResultStatus.Failed
+    assert Metadata("key").equals(string="abc").to_check_result("abc").status == InteractionResultStatus.Passed
+    assert Metadata("key").equals(string="abc").to_check_result("def").status == InteractionResultStatus.Failed
 
-    assert Metadata("key").not_equals(string="abc").to_result("abc").status == InteractionResultStatus.Failed
-    assert Metadata("key").not_equals(string="abc").to_result("def").status == InteractionResultStatus.Passed
+    assert Metadata("key").not_equals(string="abc").to_check_result("abc").status == InteractionResultStatus.Failed
+    assert Metadata("key").not_equals(string="abc").to_check_result("def").status == InteractionResultStatus.Passed
 
-    assert Metadata("key").re_match("^abc$").to_result("abc").status == InteractionResultStatus.Passed
-    assert Metadata("key").re_match("^abc").to_result("abcd").status == InteractionResultStatus.Passed
-    assert Metadata("key").re_match("^abc$").to_result("abcd").status == InteractionResultStatus.Failed
+    assert Metadata("key").re_match("^abc$").to_check_result("abc").status == InteractionResultStatus.Passed
+    assert Metadata("key").re_match("^abc").to_check_result("abcd").status == InteractionResultStatus.Passed
+    assert Metadata("key").re_match("^abc$").to_check_result("abcd").status == InteractionResultStatus.Failed
 
-    assert Metadata("key").re_match("^abc$").to_result("abc").status == InteractionResultStatus.Passed
-    assert Metadata("key").re_match("^abc").to_result("abcd").status == InteractionResultStatus.Passed
-    assert Metadata("key").re_match("^abc$").to_result("abcd").status == InteractionResultStatus.Failed
+    assert Metadata("key").re_match("^abc$").to_check_result("abc").status == InteractionResultStatus.Passed
+    assert Metadata("key").re_match("^abc").to_check_result("abcd").status == InteractionResultStatus.Passed
+    assert Metadata("key").re_match("^abc$").to_check_result("abcd").status == InteractionResultStatus.Failed
 
-    assert Metadata("key").one_of([1, 2, 3]).to_result(1).status == InteractionResultStatus.Passed
-    assert Metadata("key").one_of([1, 2, 3]).to_result("1").status == InteractionResultStatus.Passed
+    assert Metadata("key").one_of([1, 2, 3]).to_check_result(1).status == InteractionResultStatus.Passed
+    assert Metadata("key").one_of([1, 2, 3]).to_check_result("1").status == InteractionResultStatus.Passed
+    
+    with pytest.raises(Exception):
+        Metadata("key").re_match("^abc_$as[")
 
     # RESPONSE
 
-    assert Response.contains(string="bc").to_result("abcd").status == InteractionResultStatus.Passed
-    assert Response.contains(string="bc").to_result("def").status == InteractionResultStatus.Failed
+    assert Response.contains(string="bc").to_check_result("abcd").status == InteractionResultStatus.Passed
+    assert Response.contains(string="bc").to_check_result("def").status == InteractionResultStatus.Failed
 
-    assert Response.equals(string="abc").to_result("abc").status == InteractionResultStatus.Passed
-    assert Response.equals(string="abc").to_result("def").status == InteractionResultStatus.Failed
+    assert Response.equals(string="abc").to_check_result("abc").status == InteractionResultStatus.Passed
+    assert Response.equals(string="abc").to_check_result("def").status == InteractionResultStatus.Failed
 
-    assert Response.not_equals(string="abc").to_result("abc").status == InteractionResultStatus.Failed
-    assert Response.not_equals(string="abc").to_result("def").status == InteractionResultStatus.Passed
+    assert Response.not_equals(string="abc").to_check_result("abc").status == InteractionResultStatus.Failed
+    assert Response.not_equals(string="abc").to_check_result("def").status == InteractionResultStatus.Passed
 
-    assert Response.re_match("^abc$").to_result("abc").status == InteractionResultStatus.Passed
-    assert Response.re_match("^abc").to_result("abcd").status == InteractionResultStatus.Passed
-    assert Response.re_match("^abc$").to_result("abcd").status == InteractionResultStatus.Failed
+    assert Response.re_match("^abc$").to_check_result("abc").status == InteractionResultStatus.Passed
+    assert Response.re_match("^abc").to_check_result("abcd").status == InteractionResultStatus.Passed
+    assert Response.re_match("^abc$").to_check_result("abcd").status == InteractionResultStatus.Failed
+
+    with pytest.raises(Exception):
+        Response.re_match("^abc_$as[")
 
     adapter = MathChatbotAdapter()
     try:
         assert (
             Response.ai_check(should="give a greeting")
-            .to_result(
+            .to_check_result(
                 messages=[Message(role=Role.Chatbot, body="Hi there")],
                 adapter=adapter,
             )
@@ -308,7 +313,7 @@ def test_checks():
         )
         assert (
             Response.ai_check(should="give a greeting")
-            .to_result(
+            .to_check_result(
                 messages=[Message(role=Role.Chatbot, body="I like fish")],
                 adapter=adapter,
             )
@@ -317,7 +322,7 @@ def test_checks():
         )
         assert (
             Response.ai_check(should="give a greeting")
-            .to_result(
+            .to_check_result(
                 messages=[Message(role=Role.Chatbot, body="I like fish")],
                 adapter=adapter,
                 skipped=True,
@@ -429,8 +434,4 @@ Conversation.nested(
 
 
 def test_decode():
-    conversations = decode_conversations(download(""))
-
-    for conversation in conversations:
-        print()
-        print(conversation)
+    decode_conversations(download(""))

@@ -27,7 +27,8 @@ rm -f tmp/test_cases/*.case.json
     printf "| Timestamp | %s UTC  |\n" "$(date -u '+%Y-%m-%d %H:%M:%SZ')";
 } > "$output"
 
-pytest -s -o log_cli=true -k test_maa -n 8
+pytest -s -o log_cli=true -k test_maa 
+# -n 8
 
 passing_tests=(tmp/test_cases/*.p.case.md)
 num_passing=${#passing_tests[@]}
@@ -61,3 +62,5 @@ rm -f tmp/test_cases/*.case.json
 
 echo "Generated $output"
 echo "Generated $output_json"
+
+http POST http://localhost:4000/api/test_runs "@$output_json" --print h

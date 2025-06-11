@@ -45,10 +45,7 @@ class Response:
             pattern = re.compile(regexp)
             return ChatbotResponseMessageCheck(value=pattern, operation=Operation.RegexMatch)
         except Exception as e:
-            try:
                 raise Exception(f"Invalid regex: `{regexp}`") from e
-            except Exception as e2:
-                return e2
 
 
 class Operation(str, enum.Enum):
@@ -57,6 +54,19 @@ class Operation(str, enum.Enum):
     Contains = "contains"
     NotContains = "not_contains"
     RegexMatch = "regex_match"
+
+    def operation_name(self):
+        match self:
+            case Operation.Equals:
+                return "equals"
+            case Operation.NotEquals:
+                return "not_equals"
+            case Operation.Contains:
+                return "contains"
+            case Operation.NotContains:
+                return "not_contains"
+            case Operation.RegexMatch:
+                return "re_match"
 
     def should(self):
         match self:
@@ -97,9 +107,9 @@ class ChatbotResponseMessageCheck(ChatbotResponseCheck):
 
     def __str__(self):
         if isinstance(self.value, re.Pattern):
-            return f"Response.{self.operation.value}({str_repr(self.value.pattern)})"
+            return f"Response.{self.operation.operation_name()}({str_repr(self.value.pattern)})"
         else:
-            return f"Response.{self.operation.value}({str_repr(self.value)})"
+            return f"Response.{self.operation.operation_name()}({str_repr(self.value)})"
 
     def humanize(self):
         if isinstance(self.value, re.Pattern):

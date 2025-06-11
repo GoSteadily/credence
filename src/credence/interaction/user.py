@@ -1,4 +1,5 @@
 import copy
+import traceback
 from dataclasses import dataclass
 from typing import Any, List
 
@@ -49,8 +50,9 @@ class UserMessage(Interaction):
                     system_prompt=prompt,
                     generation_prompt=self.text,
                 )
-            except Exception as e:
-                return self.failed(generation_error=f"{e}")
+            except Exception:
+                trace = str(traceback.format_exc())
+                return self.failed(generation_error=f"{trace[-3000:]}")
 
         else:
             user_message = self.text
@@ -62,8 +64,9 @@ class UserMessage(Interaction):
                 chatbot_response=chatbot_response,
             )
 
-        except Exception as e:
-            return self.failed(handle_message_error=f"{e}")
+        except Exception:
+            trace = str(traceback.format_exc())
+            return self.failed(handle_message_error=f"{trace[-3000:]}")
 
     def _generate_user_message(
         self,

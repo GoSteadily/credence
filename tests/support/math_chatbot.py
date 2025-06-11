@@ -23,6 +23,9 @@ class MathChatbot:
             else:
                 return
 
+        elif message.startswith("raise"):
+            raise Exception("Error from Math Chatbot")
+
         else:
             return None
 

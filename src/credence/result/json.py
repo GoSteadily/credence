@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 from credence.interaction import InteractionResult, InteractionResultStatus
 from credence.interaction.chatbot import ChatbotRespondsResult
 from credence.interaction.chatbot.check.base import BaseCheckResult
+from credence.interaction.nested_conversation import NestedConversationResult
 from credence.message import Message
 from credence.result import Result
 
@@ -55,7 +56,22 @@ def _serialise(obj: Any, serialize_index: int | None = None):
 
     # InteractionResult (is a dataclass, but may hold nested Results)
     if isinstance(obj, InteractionResult) or isinstance(obj, BaseCheckResult):
-        if isinstance(obj, ChatbotRespondsResult):
+        if isinstance(obj, NestedConversationResult):
+            values = {k: _serialise(v) for k, v in dataclasses.asdict(obj).items()}
+            values["results"]["interaction_results"] = _serialise(obj.results.interaction_results)
+            values["interaction_id"] = obj.data.id
+
+            if obj.results.failed:
+                errors: List[str] = []
+                for interaction in obj.results.interaction_results:
+                    if interaction.status == InteractionResultStatus.Failed:
+                        errors.extend(interaction.generate_error_messages())
+
+                values["results"]["errors"] = errors
+            else:
+                values["results"]["errors"] = []
+
+        elif isinstance(obj, ChatbotRespondsResult):
             values = {k: _serialise(v) for k, v in dataclasses.asdict(obj).items()}
             values["checks"] = _serialise(obj.checks)
             values["interaction_id"] = obj.data.id

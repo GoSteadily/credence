@@ -48,7 +48,6 @@ class InteractionResult(abc.ABC):
         if cls.__annotations__.get("data", None) is None:
             raise Exception(f"data is required for all subclasses of InteractionResult {cls} {vars(cls)}")
 
-
     @abc.abstractmethod
     def generate_error_messages(self) -> List[str]:
         pass
