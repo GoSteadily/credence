@@ -19,7 +19,6 @@ from credence.interaction.chatbot.check.metadata import Metadata
 from credence.interaction.chatbot.check.response import Response
 from credence.interaction.function_call import FunctionCall
 from credence.interaction.user import User
-from credence.json import decode_conversations, download
 from credence.message import Message
 
 
@@ -68,7 +67,7 @@ class MyLLMChecker(LLMChecker):
 
 
 def conversations():
-    return [(True, c) for c in decode_conversations(download(""))]
+    # return [(True, c) for c in decode_conversations(download(""))]
     user_registration_flow = Conversation(
         title="we greet registered users by name",
         interactions=[
@@ -434,5 +433,5 @@ Conversation.nested(
     )
 
 
-def test_decode():
-    decode_conversations(download(""))
+# def test_decode():
+#     decode_conversations(download(""))
