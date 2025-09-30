@@ -32,3 +32,4 @@ printf "| Success Rate | %s / %s |\n\n"  "$num_passing" "$num_cases" >> "$output
 
 cat tmp/test_cases/*.case.md >> "$output"
 rm -f tmp/test_cases/*.case.md
+echo "Generated $output"

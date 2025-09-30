@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "instructor>=1.7.9",
+    "python-markdown-generator",
     "termcolor>=3.0.1",
 ]
 
@@ -20,6 +21,9 @@ dev-dependencies = [
     "pytest>=8.3.5",
     "ruff>=0.11.7",
 ]
+
+[tool.uv.sources]
+python-markdown-generator = { git = "https://github.com/GoSteadily/python-markdown-generator", rev = "c75b30c16ff657c23313620c67440bebdaaee61a" }
 
 [tool.pytest.ini_options]
 filterwarnings = [

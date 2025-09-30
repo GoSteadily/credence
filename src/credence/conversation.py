@@ -33,7 +33,7 @@ class Conversation:
     """The sequence of interactions being tested."""
 
     @staticmethod
-    def nested(conversation: "Conversation") -> Interaction:
+    def nested(name: str, conversation: "Conversation") -> Interaction:
         """
         Reuse a conversation inside another conversation.
 
@@ -44,7 +44,7 @@ class Conversation:
 
         from credence.interaction.nested_conversation import NestedConversation
 
-        return NestedConversation(conversation=copy.deepcopy(conversation))
+        return NestedConversation(name=name, conversation=copy.deepcopy(conversation))
 
     def __str__(self):
         """

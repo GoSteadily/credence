@@ -109,7 +109,7 @@ class ChatbotResponseContains(ChatbotResponseCheck):
         return f"Response.contains({str_repr(self.string)})"
 
     def humanize(self):
-        return f"response should contain '{self.string}'"
+        return f"response should contain `{str_repr(self.string)}`"
 
     def find_error(self, value: Tuple[int, str]):
         value = prepare_value(value)
@@ -129,7 +129,7 @@ class ChatbotResponseNotContain(ChatbotResponseCheck):
         return f'Response.not_contain("{str_repr(self.string)}")'
 
     def humanize(self):
-        return f"response should not contain '{self.string}'"
+        return f"response should not contain `{str_repr(self.string)}`"
 
     def find_error(self, value: Tuple[int, str]):
         value = prepare_value(value)
@@ -149,7 +149,7 @@ class ChatbotResponseEquals(ChatbotResponseCheck):
         return f"Response.equals({str_repr(self.string)})"
 
     def humanize(self):
-        return f"should respond with '{self.string}'"
+        return f"should respond with `{str_repr(self.string)}`"
 
     def find_error(self, value: Tuple[int, str]):
         value = prepare_value(value)
@@ -169,7 +169,7 @@ class ChatbotResponseNotEquals(ChatbotResponseCheck):
         return f'Response.not_equals("{str_repr(self.string)}")'
 
     def humanize(self):
-        return f"response should not be '{self.string}'"
+        return f"response should not be `{str_repr(self.string)}`"
 
     def find_error(self, value: Tuple[int, str]):
         value = prepare_value(value)
@@ -189,12 +189,12 @@ class ChatbotResponseRegexMatch(ChatbotResponseCheck):
         return f'Response.re_match("{self.pattern.pattern}")'
 
     def humanize(self):
-        return f"should match '{self.pattern.pattern}'"
+        return f"should match `{self.pattern.pattern}`"
 
     def find_error(self, value):
         value = prepare_value(value)
         if re.search(self.pattern, value[1]) is None:
-            return ChatbotIndexedException(value[0], f"Expected chatbot response to match the regex {self.pattern.pattern}, but found `{value[1]}`")
+            return ChatbotIndexedException(value[0], f"Expected chatbot response to match the regex `{self.pattern.pattern}`, but found `{str_repr(value[1])}`")
 
 
 def str_repr(string: str):

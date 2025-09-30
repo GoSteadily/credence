@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.12"
 
 [[package]]
@@ -152,7 +153,7 @@ name = "click"
 version = "8.1.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "platform_system == 'Windows'" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b9/2e/0090cbf739cee7d23781ad4b89a9894a41538e4fcf4c31dcdd705b78eb8b/click-8.1.8.tar.gz", hash = "sha256:ed53c9d8990d83c2a27deae68e4ee337473f6330c040a31d4225c9574d16096a", size = 226593 }
 wheels = [
@@ -174,6 +175,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "instructor" },
+    { name = "python-markdown-generator" },
     { name = "termcolor" },
 ]
 
@@ -188,6 +190,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "instructor", specifier = ">=1.7.9" },
+    { name = "python-markdown-generator", git = "https://github.com/GoSteadily/python-markdown-generator?rev=c75b30c16ff657c23313620c67440bebdaaee61a" },
     { name = "termcolor", specifier = ">=3.0.1" },
 ]
 
@@ -744,6 +747,11 @@ wheels = [
 ]
 
 [[package]]
+name = "python-markdown-generator"
+version = "0.1.0"
+source = { git = "https://github.com/GoSteadily/python-markdown-generator?rev=c75b30c16ff657c23313620c67440bebdaaee61a#c75b30c16ff657c23313620c67440bebdaaee61a" }
+
+[[package]]
 name = "requests"
 version = "2.32.3"
 source = { registry = "https://pypi.org/simple" }
@@ -837,7 +845,7 @@ name = "tqdm"
 version = "4.67.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "platform_system == 'Windows'" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a8/4b/29b4ef32e036bb34e4ab51796dd745cdba7ed47ad142a9f4a1eb8e0c744d/tqdm-4.67.1.tar.gz", hash = "sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2", size = 169737 }
 wheels = [
