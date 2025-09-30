@@ -36,7 +36,7 @@ class LLMChecker(abc.ABC):
 
     ```python
     # 1. Import the adapter
-    from credence.adapter import LLMChecker
+    from credence.checker import LLMChecker
 
     # 2. Create a subclass of LLMChecker
     class MyLLMChecker(LLMChecker):
