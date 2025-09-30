@@ -5,6 +5,7 @@
 .venv/
 __pycache__/
 tmp/
+*.tmp
 
 .bashrc
 .env
